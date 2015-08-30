@@ -10,7 +10,6 @@ function fetchCourses(postObject) {
 		}, postObject);
 
 		return $.post(url, data);
-		// data: 'CAMPUS=0&TERMYEAR=201509&CORE_CODE=AR%25&subj_code=CS&SCHDTYPE=%25&CRSE_NUMBER=&crn=&open_only=&BTN_PRESSED=FIND+class+sections&inst_name='
 	} else {
 		return $.get(url);
 	}
@@ -55,11 +54,12 @@ function populateMenu($results, preferences) {
 	}).appendTo('#button-container');
 }
 
-function populateCoursesSection($results) {
+function populateCoursesSection($results, watchedCourses) {
 	var $coursesRows = $results.find('table.dataentrytable tr');
 	if (!$coursesRows)
 		return;
 
+	var watched = $('#watched-courses .tbody');
 	var all = $('#all-courses .tbody');
 
 	var properties = $.map($coursesRows.first().children(), function(e) { return e.innerText.split(' ')[0].trim(); });
@@ -92,8 +92,14 @@ function populateCoursesSection($results) {
 			}
 		}
 
-		if (course.CRN)
-			all.append(template(course));
+		if (course.CRN) {
+			var $row = $(template(course));
+			if (watchedCourses.hasOwnProperty(course.CRN)) {
+				watched.append($row.clone());
+				$row.hide();
+			}
+			all.append($row);
+		}
 	});
 
 	$('#container').show();
@@ -106,10 +112,16 @@ function setHandlers() {
 	$('body').on('click', '#all-courses tbody tr', function() {
 		var $this = $(this);
 		watched.append($this.clone());
+		var watchedCourses = get('watchedCourses');
+		watchedCourses[$this.data('orig').CRN] = '';
+		store('watchedCourses', watchedCourses);
 		$this.hide();
 	}).on('click', '#watched-courses tbody tr', function() {
 		var $this = $(this);
 		all.find('td:contains(' + $this.data('orig').CRN + ')').parent().show();
+		var watchedCourses = get('watchedCourses');
+		delete watchedCourses[$this.data('orig').CRN];
+		store('watchedCourses', watchedCourses);
 		$this.remove();
 	});
 }
@@ -122,6 +134,10 @@ function get(key) {
 	return JSON.parse(localStorage.getItem(key)) || {};
 }
 
+function clear(key) {
+	localStorage.removeItem(key);
+}
+
 Handlebars.registerHelper('json', function(context) {
     return JSON.stringify(context);
 });
@@ -131,7 +147,7 @@ var preferences = get('preferences');
 fetchCourses(preferences).done(function(results) {
 	var $results = $(results);
 	populateMenu($results, preferences);
-	populateCoursesSection($results);
+	populateCoursesSection($results, get('watchedCourses'));
 });
 		
 		// var capacity = Number.parseInt($(results).find('tr:contains("82220")').find('td:eq(5)').text().match(/-?\d+/)[0]);
