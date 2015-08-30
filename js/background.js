@@ -3,9 +3,9 @@ var url = 'https://banweb.banner.vt.edu/ssb/prod/HZSKVTSC.P_ProcRequest';
 function fetchCourses(postObject) {
 	if (postObject) {
 		var data = $.extend({ 
-			CORE_CODE: 'AR%25', 
-			SCHDTYPE: '%25', 
-			BTN_PRESSED: 'FIND+class+sections'
+			CORE_CODE: 'AR%', 
+			SCHDTYPE: '%', 
+			BTN_PRESSED: 'FIND class sections'
 		}, postObject);
 
 		return $.post(url, data);
@@ -16,17 +16,16 @@ function fetchCourses(postObject) {
 }
 
 
-function populateMenu(courses, preferences) {
-	var $courses = $(courses);
-
+function populateMenu($results, preferences) {
 	// TODO refactor
-	var campus = $courses.find('select[name="CAMPUS"]').appendTo('#campus-container');
+	var campus = $results.find('select[name="CAMPUS"]').appendTo('#campus-container');
 	if (preferences['CAMPUS']) campus.val(preferences['CAMPUS']);
 
 	var subj_code = $('<select></select>', { name: 'subj_code' }).appendTo('#subj-container');
 
-	eval($courses[3].text); // blah
-	var termyear = $courses.find('select[name="TERMYEAR"]')
+	eval($results[3].text); // blah
+	var termyear = $results
+		.find('select[name="TERMYEAR"]')
 		.find('option:first')
 		.remove()
 		.end()
@@ -43,13 +42,63 @@ function populateMenu(courses, preferences) {
 		termyear.val(preferences['TERMYEAR']);
 	termyear.change();
 
-	$('<input></input>', { value: 'Submit', type: 'button' }).on('click', function() {
+	$('<input></input>', { value: 'Find Courses', type: 'button' }).on('click', function() {
 		var formObject = {};
 		$('form[name="ttform"]').serializeArray().forEach(function(element) {
 			formObject[element.name] = element.value;
 		});
 		store('preferences', formObject);
+		fetchCourses(formObject).done(function(results) {
+			populateCoursesSection($(results));
+		});
 	}).appendTo('#button-container');
+}
+
+function populateCoursesSection($results) {
+	var $coursesRows = $results.find('table.dataentrytable tr');
+	if (!$coursesRows)
+		return;
+
+	// $('#courses-section').html($coursesRows);
+
+	var template = Handlebars.compile($("#template").html());
+	var tbody = $('#tbody');
+
+	var properties = $.map($coursesRows.first().children(), function(e) { return e.innerText.split(' ')[0].trim(); });
+	$.each($coursesRows.slice(1), function(i, e) {
+		var course = {};
+		var cols = e.children;
+		for (var j = 0, i = 0; i < cols.length; i++, j++) {
+			try {
+				if (cols[i].colSpan > 1)
+					j += cols[i].colSpan - 1;
+				if (cols[i].innerText.match('(ARR)') || cols[i].innerText === 'TBA')
+					continue;
+				else if (properties[j] === 'Capacity')
+					course[properties[j]] = Number.parseInt(cols[i].innerText);
+				else if (properties[j] === 'Seats') {
+					var seats = cols[j].innerText.match(/-?\d+/);
+					if (seats)
+						course['Seats'] = Number.parseInt(seats[0]);
+				}
+				else if (properties[j] === 'CRN') {
+					var crn = $(cols[j]).find('a');
+					if (crn.length > 1)
+						course['Link'] = crn[0].href;
+					course[properties[j]] = cols[i].innerText.trim();
+				} else
+					course[properties[j]] = cols[i].innerText.trim();
+			} catch (e) {
+				console.log('Failed to parse: ' + cols[i].innerText);
+				console.log(e);
+			}
+		}
+
+		if (course.CRN)
+			tbody.append(template(course));
+	});
+
+	$('#container').show();
 }
 
 function store(key, value) {
@@ -60,9 +109,15 @@ function get(key) {
 	return JSON.parse(localStorage.getItem(key)) || {};
 }
 
-fetchCourses().done(function(courses) {
-	var preferences = get('preferences');
-	populateMenu(courses, preferences);
+Handlebars.registerHelper('json', function(context) {
+    return JSON.stringify(context);
+});
+
+var preferences = get('preferences');
+fetchCourses(preferences).done(function(results) {
+	var $results = $(results);
+	populateMenu($results, preferences);
+	populateCoursesSection($results);
 });
 		
 		// var capacity = Number.parseInt($(results).find('tr:contains("82220")').find('td:eq(5)').text().match(/-?\d+/)[0]);
