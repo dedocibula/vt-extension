@@ -1,4 +1,5 @@
 var url = 'https://banweb.banner.vt.edu/ssb/prod/HZSKVTSC.P_ProcRequest';
+var template = Handlebars.compile($("#template").html());
 
 function fetchCourses(postObject) {
 	if (postObject) {
@@ -59,10 +60,7 @@ function populateCoursesSection($results) {
 	if (!$coursesRows)
 		return;
 
-	// $('#courses-section').html($coursesRows);
-
-	var template = Handlebars.compile($("#template").html());
-	var tbody = $('#tbody');
+	var all = $('#all-courses .tbody');
 
 	var properties = $.map($coursesRows.first().children(), function(e) { return e.innerText.split(' ')[0].trim(); });
 	$.each($coursesRows.slice(1), function(i, e) {
@@ -95,10 +93,25 @@ function populateCoursesSection($results) {
 		}
 
 		if (course.CRN)
-			tbody.append(template(course));
+			all.append(template(course));
 	});
 
 	$('#container').show();
+}
+
+function setHandlers() {
+	var watched = $('#watched-courses .tbody');
+	var all = $('#all-courses .tbody');
+
+	$('body').on('click', '#all-courses tbody tr', function() {
+		var $this = $(this);
+		watched.append($this.clone());
+		$this.hide();
+	}).on('click', '#watched-courses tbody tr', function() {
+		var $this = $(this);
+		all.find('td:contains(' + $this.data('orig').CRN + ')').parent().show();
+		$this.remove();
+	});
 }
 
 function store(key, value) {
@@ -113,6 +126,7 @@ Handlebars.registerHelper('json', function(context) {
     return JSON.stringify(context);
 });
 
+setHandlers();
 var preferences = get('preferences');
 fetchCourses(preferences).done(function(results) {
 	var $results = $(results);

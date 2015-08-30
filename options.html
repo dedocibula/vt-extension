@@ -11,6 +11,17 @@
 		text-align: left;
 		padding-right: 10px;
 	}
+	#container table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+	#container td {
+		border: 1px solid;
+	}
+	#container tbody tr:hover {
+		background-color: #ffff99; 
+		cursor: pointer;
+	}
 	</style>
 	<title>VT Option Page</title>
 </head>
@@ -40,14 +51,10 @@
 	<hr />
 	<div id="container" style="display:none;">
 		<h3>Watched Courses</h3>
-		<div></div>
-		<hr />
-		<h3>All Courses</h3>
-		<div id="courses-section">
-			<table style="width:100%">
+		<div id="watched-courses">
+			<table>
 				<thead>
 					<tr>
-						<th>&nbsp;</th>
 						<th>CRN</th>
 						<th>Course Title</th>
 						<th>Type</th>
@@ -60,10 +67,30 @@
 						<th>Location</th>
 					</tr>
 				</thead>
-				<tbody id="tbody">
+				<tbody class="tbody"></tbody>
+			</table>
+		</div>
+		<hr />
+		<h3>All Courses</h3>
+		<div id="all-courses">
+			<table>
+				<thead>
+					<tr>
+						<th>CRN</th>
+						<th>Course Title</th>
+						<th>Type</th>
+						<th>Credits</th>
+						<th>Capacity</th>
+						<th>Instructor</th>
+						<th>Days</th>
+						<th>Begin</th>
+						<th>End</th>
+						<th>Location</th>
+					</tr>
+				</thead>
+				<tbody class="tbody">
 					<script id="template" type="text/x-handlebars-template">
 						<tr data-orig='{{json this}}'>
-							<td><input type="checkbox" /></td>
 							<td>{{CRN}}</td>
 							<td>{{Course}} - {{Title}}</td>
 							<td>{{Type}}</td>
