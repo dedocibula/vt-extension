@@ -1,5 +1,9 @@
-var url = 'https://banweb.banner.vt.edu/ssb/prod/HZSKVTSC.P_ProcRequest';
+var coursesUrl = 'https://banweb.banner.vt.edu/ssb/prod/HZSKVTSC.P_ProcRequest';
+var timetableUrl = 'https://banweb.banner.vt.edu/ssb/prod/hzskschd.P_CrseSchdDetl';
 var template = Handlebars.compile($("#template").html());
+
+var watched = $('#watched-courses .tbody');
+var all = $('#all-courses .tbody');
 
 function fetchCourses(postObject) {
 	if (postObject) {
@@ -9,12 +13,23 @@ function fetchCourses(postObject) {
 			BTN_PRESSED: 'FIND class sections'
 		}, postObject);
 
-		return $.post(url, data);
+		return $.post(coursesUrl, data);
 	} else {
-		return $.get(url);
+		return $.get(coursesUrl);
 	}
 }
 
+function fetchTimetable(term, callback) {
+	$.get(timetableUrl, { term_in: term }).done(function(results) {
+		console.log(results);
+		var watchedCourses = get('watchedCourses');
+		$(results).find('table.datadisplaytable tr:gt(1) td:first-child > a').each(function(i, e) {
+			watchedCourses[this.text.trim()] = 'R';
+		});
+		store('watchedCourses', watchedCourses);
+		callback(watchedCourses);
+	});
+}
 
 function populateMenu($results, preferences) {
 	// TODO refactor
@@ -58,9 +73,6 @@ function populateCoursesSection($results, watchedCourses) {
 	var $coursesRows = $results.find('table.dataentrytable tr');
 	if (!$coursesRows)
 		return;
-
-	var watched = $('#watched-courses .tbody');
-	var all = $('#all-courses .tbody');
 
 	var properties = $.map($coursesRows.first().children(), function(e) { return e.innerText.split(' ')[0].trim(); });
 	$.each($coursesRows.slice(1), function(i, e) {
@@ -106,14 +118,11 @@ function populateCoursesSection($results, watchedCourses) {
 }
 
 function setHandlers() {
-	var watched = $('#watched-courses .tbody');
-	var all = $('#all-courses .tbody');
-
 	$('body').on('click', '#all-courses tbody tr', function() {
 		var $this = $(this);
 		watched.append($this.clone());
 		var watchedCourses = get('watchedCourses');
-		watchedCourses[$this.data('orig').CRN] = '';
+		watchedCourses[$this.data('orig').CRN] = 'M';
 		store('watchedCourses', watchedCourses);
 		$this.hide();
 	}).on('click', '#watched-courses tbody tr', function() {
@@ -147,8 +156,37 @@ var preferences = get('preferences');
 fetchCourses(preferences).done(function(results) {
 	var $results = $(results);
 	populateMenu($results, preferences);
-	populateCoursesSection($results, get('watchedCourses'));
+	fetchTimetable(preferences['TERMYEAR'], function(watchedCourses) {
+		populateCoursesSection($results, watchedCourses);
+	});
 });
+
+chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
+
+var isRefererSet = false;
+var headers = details.requestHeaders,
+    blockingResponse = {};
+
+for (var i = 0, l = headers.length; i < l; ++i) {
+    if (headers[i].name == 'Referer') {
+        headers[i].value = "https://banweb.banner.vt.edu/ssb/prod/hzskstat.P_DispRegStatPage";
+        isRefererSet = true;
+        break;
+    }
+}
+
+if (!isRefererSet) {
+    headers.push({
+        name: "Referer",
+        value: "https://banweb.banner.vt.edu/ssb/prod/hzskstat.P_DispRegStatPage"
+    });
+}
+
+blockingResponse.requestHeaders = headers;
+return blockingResponse;
+}, {
+    urls: ["<all_urls>"]
+}, ['requestHeaders', 'blocking']);
 		
 		// var capacity = Number.parseInt($(results).find('tr:contains("82220")').find('td:eq(5)').text().match(/-?\d+/)[0]);
 		// console.log(capacity);

@@ -6,6 +6,6 @@
    "background": {
       "scripts": [ ]
    },
-   "permissions": [ "https://banweb.banner.vt.edu/*", "notifications" ],
+   "permissions": [ "https://banweb.banner.vt.edu/*", "notifications", "webRequest", "webRequestBlocking" ],
    "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
 }
