@@ -23,7 +23,7 @@
 		cursor: pointer;
 	}
 	</style>
-	<title>VT Option Page</title>
+	<title>Option Page</title>
 </head>
 <body>
 	<header id="header">
@@ -55,6 +55,7 @@
 			<table>
 				<thead>
 					<tr>
+						<th>Registered</th>
 						<th>CRN</th>
 						<th>Course Title</th>
 						<th>Type</th>
@@ -91,6 +92,7 @@
 				<tbody class="tbody">
 					<script id="template" type="text/x-handlebars-template">
 						<tr data-orig='{{json this}}'>
+							<td>{{bool Registered}}</td>
 							<td>{{CRN}}</td>
 							<td>{{Course}} - {{Title}}</td>
 							<td>{{Type}}</td>

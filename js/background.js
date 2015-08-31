@@ -5,6 +5,8 @@ var template = Handlebars.compile($("#template").html());
 var watched = $('#watched-courses .tbody');
 var all = $('#all-courses .tbody');
 
+var watchedCourses = get('watchedCourses');
+
 function fetchCourses(postObject) {
 	if (postObject) {
 		var data = $.extend({ 
@@ -21,12 +23,10 @@ function fetchCourses(postObject) {
 
 function fetchTimetable(term, callback) {
 	$.get(timetableUrl, { term_in: term }).done(function(results) {
-		console.log(results);
 		var watchedCourses = get('watchedCourses');
 		$(results).find('table.datadisplaytable tr:gt(1) td:first-child > a').each(function(i, e) {
 			watchedCourses[this.text.trim()] = 'R';
 		});
-		store('watchedCourses', watchedCourses);
 		callback(watchedCourses);
 	});
 }
@@ -89,13 +89,14 @@ function populateCoursesSection($results, watchedCourses) {
 				else if (properties[j] === 'Seats') {
 					var seats = cols[j].innerText.match(/-?\d+/);
 					if (seats)
-						course['Seats'] = Number.parseInt(seats[0]);
+						course[properties[j]] = Number.parseInt(seats[0]);
 				}
 				else if (properties[j] === 'CRN') {
 					var crn = $(cols[j]).find('a');
 					if (crn.length > 1)
 						course['Link'] = crn[0].href;
 					course[properties[j]] = cols[i].innerText.trim();
+					course['Registered'] = watchedCourses[course[properties[j]]] === 'R';
 				} else
 					course[properties[j]] = cols[i].innerText.trim();
 			} catch (e) {
@@ -121,18 +122,47 @@ function setHandlers() {
 	$('body').on('click', '#all-courses tbody tr', function() {
 		var $this = $(this);
 		watched.append($this.clone());
-		var watchedCourses = get('watchedCourses');
-		watchedCourses[$this.data('orig').CRN] = 'M';
+		watchedCourses = get('watchedCourses');
+		watchedCourses[$this.data('orig').CRN] = 'U';
 		store('watchedCourses', watchedCourses);
 		$this.hide();
 	}).on('click', '#watched-courses tbody tr', function() {
 		var $this = $(this);
 		all.find('td:contains(' + $this.data('orig').CRN + ')').parent().show();
-		var watchedCourses = get('watchedCourses');
+		watchedCourses = get('watchedCourses');
 		delete watchedCourses[$this.data('orig').CRN];
 		store('watchedCourses', watchedCourses);
 		$this.remove();
 	});
+}
+
+function checkRegistrations(results) {
+	if (Object.keys(watchedCourses).length == 0)
+		return;
+
+	var $coursesRows = $(results).find('table.dataentrytable tr');
+	var seatIndex = $coursesRows.find('td:contains("Seats")').index();
+	if (seatIndex === -1)
+		return;
+
+	var titleIndex = $coursesRows.find('td:contains("Title")').index();
+	for (var prop in watchedCourses) {
+		var $courseRow = $coursesRows.filter('tr:contains("' + prop +'")');
+		if ($courseRow.length == 0)
+			continue;
+
+		var freeSeats = Number.parseInt($courseRow.find('td:eq("' + seatIndex + '")').text().match(/-?\d+/)[0]);
+		if (freeSeats > 0) {
+			var title = $courseRow.find('td:eq("' + titleIndex + '")').text();
+			chrome.notifications.clear(prop, function() {});
+			chrome.notifications.create(prop, {
+				type: 'basic',
+	          	title: 'Course Notification',
+	          	message: title + ' can be registered',
+	          	iconUrl: 'favicon.png'
+			}, function(id) {});
+		}
+	}
 }
 
 function store(key, value) {
@@ -150,6 +180,9 @@ function clear(key) {
 Handlebars.registerHelper('json', function(context) {
     return JSON.stringify(context);
 });
+Handlebars.registerHelper('bool', function(context) {
+	return context ? 'Yes' : 'No';
+});
 
 setHandlers();
 var preferences = get('preferences');
@@ -160,6 +193,12 @@ fetchCourses(preferences).done(function(results) {
 		populateCoursesSection($results, watchedCourses);
 	});
 });
+
+if (Object.keys(preferences).length > 0) {
+	setInterval(function() {
+		fetchCourses(preferences).done(checkRegistrations);
+	}, 20 * 1000);
+}
 
 chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
 
