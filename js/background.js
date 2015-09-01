@@ -226,18 +226,3 @@ return blockingResponse;
 }, {
     urls: ["<all_urls>"]
 }, ['requestHeaders', 'blocking']);
-		
-		// var capacity = Number.parseInt($(results).find('tr:contains("82220")').find('td:eq(5)').text().match(/-?\d+/)[0]);
-		// console.log(capacity);
-		// if (capacity > 0) {
-		// 	chrome.notifications.clear('82220', function() {});
-		// 	chrome.notifications.create('82220', {
-		// 		type: 'basic',
-	 //          	title: 'Register Multiprocessor Programming',
-	 //          	message: 'Register Multiprocessor Programming',
-	 //          	iconUrl: 'icon48.png'
-		// 	}, function(id) {});
-		// }
-
-// setInterval(queryVT, 10000);
-
