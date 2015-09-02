@@ -154,13 +154,16 @@ function checkRegistrations(results) {
 		var freeSeats = Number.parseInt($courseRow.find('td:eq("' + seatIndex + '")').text().match(/-?\d+/)[0]);
 		if (freeSeats > 0) {
 			var title = $courseRow.find('td:eq("' + titleIndex + '")').text();
-			chrome.notifications.clear(prop, function() {});
 			chrome.notifications.create(prop, {
 				type: 'basic',
 	          	title: 'Course Notification',
 	          	message: title + ' can be registered',
 	          	iconUrl: 'favicon.png'
-			}, function(id) {});
+			}, function(id) {
+				setTimeout(function() {
+					chrome.notifications.clear(id, function() {});
+				}, 10 * 1000);
+			});
 		}
 	}
 }
