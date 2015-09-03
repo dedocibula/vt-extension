@@ -51,145 +51,38 @@
 					<h4>Preferences</h4>
 				</div>
 				<div class="course-section-table note">
-				<form name="ttform">
-					<div class="section">
-						<table>
-							<tbody>
-								<tr>
-									<th>Campus</th>
-									<th>Term</th>
-									<th>Major</th>
-									<th>&nbsp;</th>
-								</tr>
-								<tr>
-									<td id="campus-container"></td>
-									<td id="term-container"></td>
-									<td id="subj-container"></td>
-									<td>
-										<div class="buttons right">
-					        				<a href="/accounts/myaccounts/email/407412/addresses">Search Courses</a>
-											<div class="clear"></div>
-					    				</div>
-					    			</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</form>
-				</div>
-			</section>
-				<section id="observed-courses" class="course-section">
-					<div class="course-section-name left">
-						<h4>Observed Courses</h4>
-					</div>
-					<div class="course-section-table note">
-						<table>
-							<tbody>
-								<tr>
-									<th>VT Google Apps e-mail</th>
-									<td>agalad@vt.edu
-										<div class="actions right">
-											<a href="http://start.google.vt.edu/">Login</a> |
-											<a href="https://my.vt.edu/accounts/myaccounts/email/407412" title="Change your VT Google Apps e-mail account settings.">Change Settings</a>
-										</div>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</section>
-				<section id="all-courses" class="course-section">
-					<div class="course-section-name left">
-						<h4>All Courses</h4>
-					</div>
-					<div class="course-section-table note">
-						<table>
-							<tbody>
-								<tr>
-									<th>Username</th>
-									<td>agalad
-										<div class="actions right">
-											<a href="https://my.vt.edu/accounts/myaccounts/network/change_password">
-												Change password
-											</a>
-										</div>
-									</td>
-								</tr>
-								<tr>
-									<th>Password last changed</th>
-									<td> 
-										Mon, Aug 17, 2015 1:04 PM</td>
+					<form name="ttform">
+						<div class="section">
+							<table>
+								<tbody>
+									<tr>
+										<th>Campus</th>
+										<th>Term</th>
+										<th>Major</th>
+										<th>&nbsp;</th>
 									</tr>
 									<tr>
-										<th>Services</th>
+										<td id="campus-container"></td>
+										<td id="term-container"></td>
+										<td id="subj-container"></td>
 										<td>
-											<div class="network-services-list">
-												<dl>
-													<dt>WIRELESS LAN SERVICE</dt>
-													<dd>
-														<b>Authorized:</b>
-														<img alt="logo" src="./Virginia Tech _ Accounts_files/glyphicons_ok.png" width="10" height="10">
-													</dd>
-													<dd>
-													</dd>
-													<dd>
-													</dd>
-													<dt>RLAN VPN SERVICE</dt>
-													<dd>
-														<b>Not Authorized:</b>
-														<img alt="logo" src="./Virginia Tech _ Accounts_files/glyphicons_remove.png" width="10" height="10">
-													</dd>
-													<dd>
-													</dd>
-													<dd>
-													</dd>
-													<dt>REMOTE ACCESS VPN</dt>
-													<dd>
-														<b>Authorized:</b>
-														<img alt="logo" src="./Virginia Tech _ Accounts_files/glyphicons_ok.png" width="10" height="10">
-													</dd>
-													<dd>
-													</dd>
-													<dd>
-													</dd>
-												</dl>
-											</div>
-										</td>
+											<div class="buttons right">
+						        				<a href="/accounts/myaccounts/email/407412/addresses">Search Courses</a>
+												<div class="clear"></div>
+						    				</div>
+						    			</td>
 									</tr>
 								</tbody>
 							</table>
 						</div>
-					</section>
+					</form>
 				</div>
-				<div id="footer" class="note">
-					<div class="left">
-						Created by DedoCibula
-					</div>
-					<div class="clear"></div>
+			</section>
+			<section id="observed-courses" class="course-section">
+				<div class="course-section-name">
+					<h4>Observed Courses</h4>
 				</div>
-<!-- 			<div id="menu">
-				<h2>Course Registration</h2>
-				<form name="ttform">
-					<table>
-						<tr>
-							<th>Campus</th>
-							<th>Term</th>
-							<th>Major</th>
-							<th>&nbsp;</th>
-						</tr>
-						<tr>
-							<td id="campus-container"></td>
-							<td id="term-container"></td>
-							<td id="subj-container"></td>
-							<td id="button-container"></td>
-						</tr>
-					</table>
-				</form>
-			</div> -->
-			<hr />
-			<div id="container" style="display:none;">
-				<h3>Watched Courses</h3>
-				<div id="watched-courses">
+				<div class="course-section-table note">
 					<table>
 						<thead>
 							<tr>
@@ -209,12 +102,16 @@
 						<tbody class="tbody"></tbody>
 					</table>
 				</div>
-				<hr />
-				<h3>All Courses</h3>
-				<div id="all-courses">
+			</section>
+			<section id="all-courses" class="course-section">
+				<div class="course-section-name">
+					<h4>All Courses</h4>
+				</div>
+				<div class="course-section-table note">
 					<table>
 						<thead>
 							<tr>
+								<th>Registered</th>
 								<th>CRN</th>
 								<th>Course Title</th>
 								<th>Type</th>
@@ -246,7 +143,15 @@
 						</tbody>
 					</table>
 				</div>
+			</section>
+		</div>
+		<div id="footer" class="note">
+			<div class="left">
+				Created by DedoCibula
 			</div>
-			<script type="text/javascript" src="js/background.js"></script>
+			<div class="clear"></div>
+		</div>
+	</div>
+	<script type="text/javascript" src="js/background.js"></script>
 </body>
 </html>

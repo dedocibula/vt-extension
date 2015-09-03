@@ -22,7 +22,7 @@ ul li ul{ padding-left:40px; margin:0}
 ol { padding-left:40px; margin:15px 0}
 
 td.label { font-weight: bold; text-align: right; }
-td input, select { margin: 5px; }
+td input, select { margin: 5px; font-size: 12px; }
 td span {display: inline-block; margin: 6px 0;  }
 
 

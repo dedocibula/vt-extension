@@ -2,7 +2,7 @@ var coursesUrl = 'https://banweb.banner.vt.edu/ssb/prod/HZSKVTSC.P_ProcRequest';
 var timetableUrl = 'https://banweb.banner.vt.edu/ssb/prod/hzskschd.P_CrseSchdDetl';
 var template = Handlebars.compile($("#template").html());
 
-var watched = $('#watched-courses .tbody');
+var watched = $('#observed-courses .tbody');
 var all = $('#all-courses .tbody');
 
 var watchedCourses = get('watchedCourses');
