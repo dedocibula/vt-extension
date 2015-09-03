@@ -127,7 +127,7 @@ function setHandlers() {
 		watchedCourses[$this.data('orig').CRN] = 'U';
 		store('watchedCourses', watchedCourses);
 		$this.hide();
-	}).on('click', '#watched-courses tbody tr', function() {
+	}).on('click', '#observed-courses tbody tr', function() {
 		var $this = $(this);
 		all.find('td:contains(' + $this.data('orig').CRN + ')').parent().show();
 		watchedCourses = get('watchedCourses');
