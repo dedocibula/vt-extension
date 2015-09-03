@@ -45,6 +45,7 @@ function populateMenu($results, preferences) {
 		.remove()
 		.end()
 		.removeAttr('onchange')
+		.removeAttr('size')
 		.on('change', function() {
 			var val = $(this).val();
 			dropdownlist(val);

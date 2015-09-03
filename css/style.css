@@ -359,7 +359,7 @@ padding: 10px 0 0;
 }
 
 .section table {width: 100%; border-collapse: collapse; border: none;}
-.section td, .section th {border: none;}
+.section td, .section th {border: none; width: 1%}
 .section td {padding: 0;}
 .section th {padding: 5px 6px;}
 
