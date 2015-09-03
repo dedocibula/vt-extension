@@ -498,4 +498,8 @@ table.tablesorter thead tr .headerSortDown {
 #google_oid_msg_show_more_toggle {
     display: none;
 }
+#observed-courses tbody tr:hover, #all-courses tbody tr:hover {
+    background-color: #ffff99; 
+    cursor: pointer;
+}
 
