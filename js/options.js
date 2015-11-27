@@ -1,5 +1,6 @@
 var coursesUrl = 'https://banweb.banner.vt.edu/ssb/prod/HZSKVTSC.P_ProcRequest';
 var timetableUrl = 'https://banweb.banner.vt.edu/ssb/prod/hzskschd.P_CrseSchdDetl';
+var importantDatesUrl = 'https://www.registrar.vt.edu/dates_deadlines/course_request_dates/index.html';
 var template = Handlebars.compile($("#template").html());
 
 var watched = $('#observed-courses .tbody');
