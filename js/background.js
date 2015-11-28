@@ -29,17 +29,33 @@
 			this.storage = storage;
 
 			this.timer = null;
+			this.loggedIn = null;
 		}
 
 		BackgroundWorker.prototype = {
 			start: function() {
 				var self = this;
 				if (!self.timer) {
-
+					self.reloadCourses(function() { self._setupBrowserAction(); });
 					self.timer = setInterval(function() {
-
+						self.reloadCourses(function() {});
 					}, self.settings.REFRESH_INTERVAL);
 				}
+			},
+
+			reloadCourses: function(onReady) {
+				var self = this;
+				self.loader.getCoursesAsync(function(coursesSection) {
+					self.loggedIn = coursesSection.loggedIn;
+					if (self.loggedIn) {
+						self.loader.getTimetableAsync(coursesSection.TERMYEAR, function(registered) {
+							coursesSection['registered'] = registered;
+							onReady(coursesSection);
+						});
+					} else {
+						onReady(coursesSection);
+					}
+				});
 			},
 
 			stop: function() {
@@ -48,6 +64,20 @@
 					clearInterval(self.timer);
 					self.timer = null;
 				}
+			},
+
+			_setupBrowserAction: function() {
+				var self = this;
+				chrome.browserAction.onClicked.addListener(function(tab) {
+					var url = self.loggedIn ? self.settings.MAIN_URL : self.settings.LOGIN_URL;
+					chrome.tabs.query({ url: url }, function(tabs) {
+						if (tabs.length !== 0) {
+							chrome.tabs.update(tabs[0].id, { url: url, active: true });
+						} else {
+							chrome.tabs.create({ url: url });
+						}
+					});
+				});
 			}
 		};
 
@@ -76,7 +106,7 @@
 					type: 'html',
 					data: data
 				}).done(function(results) {
-					onReady(self._processResults(results));
+					onReady(self._processCoursesSection(results));
 				});
 			},
 
@@ -94,7 +124,7 @@
 				});
 			},
 			
-			_processResults: function(results) {
+			_processCoursesSection: function(results) {
 				var self = this, $results = $(results);
 				var coursesSection = {
 					loggedIn: $results.find('a[href$="LogOut"]').length > 0,
@@ -194,21 +224,6 @@
 
 	var loader = new Loader(settings);
 	var worker = new BackgroundWorker(settings, loader, new Storage());
-
-	chrome.browserAction.onClicked.addListener(function(tab) {
-		var url = chrome.extension.getURL('index.html');
-		chrome.tabs.query({ url: url }, function(tabs) {
-			if (tabs.length !== 0) {
-				chrome.tabs.update(tabs[0].id, { url: url, active: true });
-			} else {
-				chrome.tabs.create({ url: url });
-			}
-		});
-	});
-
-	loader.getCoursesAsync(function(result) { console.log(result); }, {
-		CAMPUS: "0", TERMYEAR: "201509", subj_code: "CS"
-	});
-	loader.getTimetableAsync("201509", function(result) { console.log(result); });
+	worker.start();
 })(jQuery, window, document);
 
