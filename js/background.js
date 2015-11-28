@@ -30,14 +30,20 @@
 
 			this.timer = null;
 			this.preferences = this.storage.retrieve('preferences');
+			this.watchedCourses = this.storage.retrieve('watchedCourses')
 		}
 
 		BackgroundWorker.prototype = {
 			start: function() {
 				var self = this;
 				if (!self.timer) {
+					self.reloadAll(function(results) {
+						self._checkRegistrations(results);
+					});
 					self.timer = setInterval(function() {
-						self.reloadAll(function() {});
+						self.reloadAll(function(results) {
+							self._checkRegistrations(results);
+						});
 					}, self.settings.REFRESH_INTERVAL);
 				}
 			},
@@ -48,7 +54,14 @@
 				$.when(self.loader.getCoursesAsync(current), 
 					self.loader.getTimetableAsync(current.TERMYEAR))
 					.done(function(coursesSection, timetableSection) {
-						onReady($.extend({}, coursesSection, timetableSection));
+						var term = timetableSection.default || coursesSection.default, removed = false;
+						var watchedSection = self.watchedCourses[term] || {};
+						for (var course in watchedSection) {
+							if (course in timetableSection.registered)
+								removed |= delete watchedSection[course];
+						}
+						if (removed) self.updatedWatchedCourses(term, watchedSection);
+						onReady($.extend({}, coursesSection, timetableSection, { watched: watchedSection }));
 					});
 			},
 
@@ -58,6 +71,35 @@
 					clearInterval(self.timer);
 					self.timer = null;
 				}
+			},
+
+			updatedWatchedCourses: function(term, courses) {
+				var self = this;
+				self.watchedCourses.term = courses || {};
+				self.storage.persist('watchedCourses', self.watchedCourses);
+			},
+
+			_checkRegistrations: function(results) {
+				if (!results.loggedIn || $.isEmptyObject(results.watched)) return;
+				var self = this, $results = $(results.courses);
+
+				$(results.courses).each(function() {
+					for (var course in results.watched) {
+						if (this.CRN == course && this.Seats > 0) {
+							chrome.notifications.create(course, {
+								type: 'basic',
+					          	title: 'VT - Course Notification',
+					          	message: this.title + ' can be registered',
+					          	iconUrl: 'favicon.png'
+							}, function(id) {
+								setTimeout(function() {
+									chrome.notifications.clear(id, function() {});
+								}, 10 * 1000);
+							});
+							break;
+						}
+					}
+				});
 			}
 		};
 
