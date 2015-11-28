@@ -29,6 +29,7 @@
 			this.storage = storage;
 
 			this.timer = null;
+			this.preferences = this.storage.retrieve('preferences');
 		}
 
 		BackgroundWorker.prototype = {
@@ -43,11 +44,11 @@
 
 			reloadAll: function(onReady) {
 				var self = this;
-				$.when(self.loader.getCoursesAsync(), self.loader.getTimetableAsync())
+				var current = self.preferences[self.preferences.default] || {};
+				$.when(self.loader.getCoursesAsync(current), 
+					self.loader.getTimetableAsync(current.TERMYEAR))
 					.done(function(coursesSection, timetableSection) {
-						var watched = {};
-						$(timetableSection).each(function() { watched[this] = 'R' });
-						onReady($.extend(coursesSection, { watched: watched }));
+						onReady($.extend({}, coursesSection, timetableSection));
 					});
 			},
 
@@ -86,8 +87,7 @@
 					type: 'html',
 					data: data
 				}).done(function(results) {
-					var coursesSection = self._processCoursesSection(results);
-					deferred.resolve(coursesSection);
+					deferred.resolve(self._processCoursesSection(results));
 				});
 				return deferred.promise();
 			},
@@ -102,9 +102,7 @@
 					type: 'html',
 					data: data
 				}).done(function(results) {
-					deferred.resolve($(results.replace(/<img\b[^>]*>/ig, ''))
-						.find('table.datadisplaytable tr:gt(1) td:first-child > a')
-						.map(function() { return this.text.trim(); }));
+					deferred.resolve(self._processTimetableSection(results.replace(/<img\b[^>]*>/ig, '')));
 				});
 				return deferred.promise();
 			},
@@ -116,8 +114,29 @@
 					menu: self._processMenuSection($results)
 				};
 				return coursesSection.loggedIn ? 
-					$.extend(coursesSection, { courses: self._processCourses($results) }) : 
+					$.extend(coursesSection, 
+						{ default: Object.keys(coursesSection.menu.TERMYEAR)[0] }, 
+						{ courses: self._processCourses($results) }) : 
 					coursesSection;
+			},
+
+			_processTimetableSection: function(results) {
+				var self = this, $results = $(results);
+				var timetable = {
+					'registered': {}
+				}
+
+				$results.find('a[href$="print_friendly=Y"]').each(function() {
+					var match = this.href.match(/term_in=(.+)&/);
+					if (match && match.length == 2)
+						timetable['default'] = match[1];
+				});
+
+				$results.find('table.datadisplaytable tr:gt(1) td:first-child > a').each(function() { 
+					timetable['registered'][this.text.trim()] = 'R';
+				});
+
+				return timetable;
 			},
 
 			_processMenuSection: function($results) {
@@ -133,7 +152,6 @@
 				});
 
 				$results.find('select[name="TERMYEAR"] option').first().remove().end().each(function() {
-					if (!menu['TERMYEAR']['selected']) menu['TERMYEAR']['selected'] = this.value;
 					menu['TERMYEAR'][this.value] = this.text;
 					menu['subj_code'][this.value] = [];
 				});
@@ -202,7 +220,13 @@
 		}
 
 		Storage.prototype = {
-			// methods...
+			persist: function(key, value) {
+				localStorage.setItem(key, JSON.stringify(value));
+			},
+
+			retrieve: function(key) {
+				return JSON.parse(localStorage.getItem(key)) || {};
+			}
 		};
 
 		return Storage;
