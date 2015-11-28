@@ -29,33 +29,26 @@
 			this.storage = storage;
 
 			this.timer = null;
-			this.loggedIn = null;
 		}
 
 		BackgroundWorker.prototype = {
 			start: function() {
 				var self = this;
 				if (!self.timer) {
-					self.reloadCourses(function() { self._setupBrowserAction(); });
 					self.timer = setInterval(function() {
-						self.reloadCourses(function() {});
+						self.reloadAll(function() {});
 					}, self.settings.REFRESH_INTERVAL);
 				}
 			},
 
-			reloadCourses: function(onReady) {
+			reloadAll: function(onReady) {
 				var self = this;
-				self.loader.getCoursesAsync(function(coursesSection) {
-					self.loggedIn = coursesSection.loggedIn;
-					if (self.loggedIn) {
-						self.loader.getTimetableAsync(coursesSection.TERMYEAR, function(registered) {
-							coursesSection['registered'] = registered;
-							onReady(coursesSection);
-						});
-					} else {
-						onReady(coursesSection);
-					}
-				});
+				$.when(self.loader.getCoursesAsync(), self.loader.getTimetableAsync())
+					.done(function(coursesSection, timetableSection) {
+						var watched = {};
+						$(timetableSection).each(function() { watched[this] = 'R' });
+						onReady($.extend(coursesSection, { watched: watched }));
+					});
 			},
 
 			stop: function() {
@@ -64,20 +57,6 @@
 					clearInterval(self.timer);
 					self.timer = null;
 				}
-			},
-
-			_setupBrowserAction: function() {
-				var self = this;
-				chrome.browserAction.onClicked.addListener(function(tab) {
-					var url = self.loggedIn ? self.settings.MAIN_URL : self.settings.LOGIN_URL;
-					chrome.tabs.query({ url: url }, function(tabs) {
-						if (tabs.length !== 0) {
-							chrome.tabs.update(tabs[0].id, { url: url, active: true });
-						} else {
-							chrome.tabs.create({ url: url });
-						}
-					});
-				});
 			}
 		};
 
@@ -90,7 +69,7 @@
 		}
 
 		Loader.prototype = {
-			getCoursesAsync: function(onReady, parameters) {
+			getCoursesAsync: function(parameters) {
 				var self = this, data = {};
 				if (!$.isEmptyObject(parameters)) {
 					data = $.extend(data, { 
@@ -100,28 +79,34 @@
 					}, parameters);
 				}
 
+				var deferred = $.Deferred();
 				$.ajax({
 					url: self.settings.COURSES_URL,
 					method: $.isEmptyObject(data) ? 'GET' : 'POST',
 					type: 'html',
 					data: data
 				}).done(function(results) {
-					onReady(self._processCoursesSection(results));
+					var coursesSection = self._processCoursesSection(results);
+					deferred.resolve(coursesSection);
 				});
+				return deferred.promise();
 			},
 
-			getTimetableAsync: function(term, onReady) {
+			getTimetableAsync: function(term) {
 				var self = this, data = { term_in: term };
 
+				var deferred = $.Deferred();
 				$.ajax({
 					url: self.settings.TIMETABLE_URL, 
 					method: 'GET',
 					type: 'html',
 					data: data
 				}).done(function(results) {
-					onReady($(results).find('table.datadisplaytable tr:gt(1) td:first-child > a')
+					deferred.resolve($(results.replace(/<img\b[^>]*>/ig, ''))
+						.find('table.datadisplaytable tr:gt(1) td:first-child > a')
 						.map(function() { return this.text.trim(); }));
 				});
+				return deferred.promise();
 			},
 			
 			_processCoursesSection: function(results) {
@@ -130,8 +115,9 @@
 					loggedIn: $results.find('a[href$="LogOut"]').length > 0,
 					menu: self._processMenuSection($results)
 				};
-				if (coursesSection.loggedIn) coursesSection['courses'] = self._processCourses($results);
-				return coursesSection;
+				return coursesSection.loggedIn ? 
+					$.extend(coursesSection, { courses: self._processCourses($results) }) : 
+					coursesSection;
 			},
 
 			_processMenuSection: function($results) {
@@ -225,5 +211,22 @@
 	var loader = new Loader(settings);
 	var worker = new BackgroundWorker(settings, loader, new Storage());
 	worker.start();
+
+	chrome.browserAction.onClicked.addListener(function(tab) {
+		worker.reloadAll(function(results) {
+			var url = results.loggedIn ? settings.MAIN_URL : settings.LOGIN_URL;
+			chrome.tabs.query({ url: url }, function(tabs) {
+				if (tabs.length !== 0) {
+					chrome.tabs.update(tabs[0].id, { url: url, active: true });
+				} else {
+					chrome.tabs.create({ url: url });
+				}
+			});
+		});
+	});
+
+	worker.reloadAll(function(results) {
+		console.log(results);
+	});
 })(jQuery, window, document);
 
