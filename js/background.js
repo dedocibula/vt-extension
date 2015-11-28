@@ -37,13 +37,9 @@
 			start: function() {
 				var self = this;
 				if (!self.timer) {
-					self.reloadAll(function(results) {
-						self._checkRegistrations(results);
-					});
+					self.reloadAll(function(results) { self._checkRegistrations(results); });
 					self.timer = setInterval(function() {
-						self.reloadAll(function(results) {
-							self._checkRegistrations(results);
-						});
+						self.reloadAll(function(results) { self._checkRegistrations(results); });
 					}, self.settings.REFRESH_INTERVAL);
 				}
 			},
@@ -54,13 +50,13 @@
 				$.when(self.loader.getCoursesAsync(current), 
 					self.loader.getTimetableAsync(current.TERMYEAR))
 					.done(function(coursesSection, timetableSection) {
-						var term = timetableSection.default || coursesSection.default, removed = false;
-						var watchedSection = self.watchedCourses[term] || {};
+						var termyear = timetableSection.default || coursesSection.default, removed = false;
+						var watchedSection = self.watchedCourses[termyear] || {};
 						for (var course in watchedSection) {
 							if (course in timetableSection.registered)
 								removed |= delete watchedSection[course];
 						}
-						if (removed) self.updatedWatchedCourses(term, watchedSection);
+						if (removed) self.updateWatchedCourses(termyear, watchedSection);
 						onReady($.extend({}, coursesSection, timetableSection, { watched: watchedSection }));
 					});
 			},
@@ -73,9 +69,17 @@
 				}
 			},
 
-			updatedWatchedCourses: function(term, courses) {
+			updatePreferences: function(preferences) {
 				var self = this;
-				self.watchedCourses.term = courses || {};
+				if ($.isEmptyObject(preferences)) return;
+				var termyear = self.preferences['default'] = preferences.TERMYEAR;
+				self.preferences[termyear] = $.extend({}, self.preferences[termyear], preferences);
+				self.storage.persist('preferences', self.preferences);
+			},
+
+			updateWatchedCourses: function(termyear, courses) {
+				var self = this;
+				self.watchedCourses[termyear] = courses || {};
 				self.storage.persist('watchedCourses', self.watchedCourses);
 			},
 
