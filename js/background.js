@@ -46,6 +46,20 @@
 					onReady(self._processResults(results));
 				});
 			},
+
+			getTimetableAsync: function(term, onReady) {
+				var self = this, data = { term_in: term };
+
+				$.ajax({
+					url: self.settings.TIMETABLE_URL, 
+					method: 'GET',
+					type: 'html',
+					data: data
+				}).done(function(results) {
+					onReady($(results).find('table.datadisplaytable tr:gt(1) td:first-child > a')
+						.map(function() { return this.text.trim(); }));
+				});
+			},
 			
 			_processResults: function(results) {
 				var self = this, $results = $(results);
@@ -149,6 +163,7 @@
 	loader.getCoursesAsync(function(result) { console.log(result); }, {
 		CAMPUS: "0", TERMYEAR: "201509", subj_code: "CS"
 	});
+	
 
 	chrome.browserAction.onClicked.addListener(function(tab) {
 		var url = chrome.extension.getURL('index.html');
@@ -160,5 +175,31 @@
 			}
 		});
 	});
+
+	chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
+		var isRefererSet = false;
+		var headers = details.requestHeaders,
+		    blockingResponse = {};
+
+		for (var i = 0, l = headers.length; i < l; ++i) {
+		    if (headers[i].name == 'Referer') {
+		        headers[i].value = "https://banweb.banner.vt.edu/ssb/prod/hzskstat.P_DispRegStatPage";
+		        isRefererSet = true;
+		        break;
+		    }
+		}
+
+		if (!isRefererSet) {
+		    headers.push({
+		        name: "Referer",
+		        value: "https://banweb.banner.vt.edu/ssb/prod/hzskstat.P_DispRegStatPage"
+		    });
+		}
+
+		blockingResponse.requestHeaders = headers;
+		return blockingResponse;
+	}, { urls: ["<all_urls>"] }, ['requestHeaders', 'blocking']);
+
+	loader.getTimetableAsync("201509", function(result) { console.log(result); });
 })(jQuery, window, document);
 
