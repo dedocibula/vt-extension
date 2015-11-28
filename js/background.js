@@ -2,20 +2,53 @@
 	var settings = {
 		COURSES_URL: 'https://banweb.banner.vt.edu/ssb/prod/HZSKVTSC.P_ProcRequest',
 		TIMETABLE_URL: 'https://banweb.banner.vt.edu/ssb/prod/hzskschd.P_CrseSchdDetl',
+		REFERER_URL: 'https://banweb.banner.vt.edu/ssb/prod/hzskstat.P_DispRegStatPage',
 		MAIN_URL: chrome.extension.getURL('index.html'),
 		LOGIN_URL: 'https://banweb.banner.vt.edu/ssb/prod/twbkwbis.P_GenMenu?name=bmenu.P_MainMnu',
 		REFRESH_INTERVAL: 20 * 1000
 	};
+
+	chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
+		headers = details.requestHeaders;
+
+		for (var i = 0; i < headers.length; i++) {
+			if (headers[i].name == 'Referer') {
+				headers[i].value = settings.REFERER_URL;
+				return { requestHeaders: headers };
+			}
+		}
+
+		headers.push({ name: 'Referer',	value: settings.REFERER_URL });
+		return { requestHeaders: headers };
+	}, { urls: ["<all_urls>"] }, ['requestHeaders', 'blocking']);
 
 	var BackgroundWorker = (function() {
 		function BackgroundWorker(settings, loader, storage) {
 			this.settings = $.extend({}, settings);
 			this.loader = loader;
 			this.storage = storage;
+
+			this.timer = null;
 		}
 
 		BackgroundWorker.prototype = {
-			// methods...
+			start: function() {
+				var self = this;
+				if (!self.timer) {
+
+					self.timer = setInterval(function() {
+
+					}, self.settings.REFRESH_INTERVAL);
+				}
+			},
+
+			stop: function() {
+				var self = this;
+				if (self.timer) {
+					clearInterval(self.timer);
+					self.timer = null;
+				}
+			}
 		};
 
 		return BackgroundWorker;
@@ -160,10 +193,7 @@
 	})();
 
 	var loader = new Loader(settings);
-	loader.getCoursesAsync(function(result) { console.log(result); }, {
-		CAMPUS: "0", TERMYEAR: "201509", subj_code: "CS"
-	});
-	
+	var worker = new BackgroundWorker(settings, loader, new Storage());
 
 	chrome.browserAction.onClicked.addListener(function(tab) {
 		var url = chrome.extension.getURL('index.html');
@@ -176,30 +206,9 @@
 		});
 	});
 
-	chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
-		var isRefererSet = false;
-		var headers = details.requestHeaders,
-		    blockingResponse = {};
-
-		for (var i = 0, l = headers.length; i < l; ++i) {
-		    if (headers[i].name == 'Referer') {
-		        headers[i].value = "https://banweb.banner.vt.edu/ssb/prod/hzskstat.P_DispRegStatPage";
-		        isRefererSet = true;
-		        break;
-		    }
-		}
-
-		if (!isRefererSet) {
-		    headers.push({
-		        name: "Referer",
-		        value: "https://banweb.banner.vt.edu/ssb/prod/hzskstat.P_DispRegStatPage"
-		    });
-		}
-
-		blockingResponse.requestHeaders = headers;
-		return blockingResponse;
-	}, { urls: ["<all_urls>"] }, ['requestHeaders', 'blocking']);
-
+	loader.getCoursesAsync(function(result) { console.log(result); }, {
+		CAMPUS: "0", TERMYEAR: "201509", subj_code: "CS"
+	});
 	loader.getTimetableAsync("201509", function(result) { console.log(result); });
 })(jQuery, window, document);
 
