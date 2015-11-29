@@ -39,7 +39,8 @@
 				if (!self.timer) {
 					self.reloadAll(function(results) { self._checkRegistrations(results); });
 					self.timer = setInterval(function() {
-						self.reloadAll(function(results) { self._checkRegistrations(results); });
+						if (!$.isEmptyObject(self.watchedCourses))
+							self.reloadAll(function(results) { self._checkRegistrations(results); });
 					}, self.settings.REFRESH_INTERVAL);
 				}
 			},
