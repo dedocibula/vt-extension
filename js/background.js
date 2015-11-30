@@ -1,4 +1,6 @@
 (function($, window, document, undefined) {
+	var cachedResults = null;
+
 	var settings = {
 		COURSES_URL: 'https://banweb.banner.vt.edu/ssb/prod/HZSKVTSC.P_ProcRequest',
 		TIMETABLE_URL: 'https://banweb.banner.vt.edu/ssb/prod/hzskschd.P_CrseSchdDetl',
@@ -9,10 +11,6 @@
 	};
 
 	function registerListeners(settings, backgroundWorker) {
-		var controllerInvalidate = function(results) {
-			if (results.loggedIn) chrome.extension.getViews({ type: 'tab' }).invalidate(results);
-		}
-
 		chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
 			headers = details.requestHeaders;
 
@@ -32,9 +30,9 @@
 				var url = results.loggedIn ? settings.MAIN_URL : settings.LOGIN_URL;
 				chrome.tabs.query({ url: url }, function(tabs) {
 					if (tabs.length !== 0) {
-						chrome.tabs.update(tabs[0].id, { url: url, active: true }, function() { controllerInvalidate(results); });
+						chrome.tabs.update(tabs[0].id, { url: url, active: true }, function() { cachedResults = results; });
 					} else {
-						chrome.tabs.create({ url: url }, function() { controllerInvalidate(results); });
+						chrome.tabs.create({ url: url }, function() { cachedResults = results; });
 					}
 				});
 			});
@@ -52,6 +50,16 @@
 			if (!$.isPlainObject(watchedCourses)) return;
 			backgroundWorker.updateWatchedCourses(watchedCourses);
 		}
+
+		window.getLatestResults = function(callback) {
+			if (!$.isFunction(callback)) return;
+			if (cachedResults) {
+				callback(cachedResults);
+				cachedResults = null;
+			} else {
+				backgroundWorker.reloadAll(callback);
+			}
+		}
 	}
 
 	var BackgroundWorker = (function() {
@@ -62,7 +70,7 @@
 
 			this.timer = null;
 			this.preferences = this.storage.retrieve('preferences');
-			this.watchedCourses = this.storage.retrieve('watchedCourses')
+			this.watchedCourses = this.storage.retrieve('watchedCourses');
 		}
 
 		BackgroundWorker.prototype = {

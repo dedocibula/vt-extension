@@ -1,6 +1,7 @@
 (function($, window, document, undefined) {
 	var Controller = (function() {
-		function Controller(renderer) {
+		function Controller(backend, renderer) {
+			this.backend = backend;
 			this.renderer = renderer;
 		}
 
@@ -21,4 +22,11 @@
 
 		return Renderer;
 	})();
+
+	// initialize objects
+	var backend = chrome.extension.getBackgroundPage();
+	var controller = new Controller(new Renderer());
+	backend.getLatestResults(function(results) {
+		console.log(results);
+	});
 })(jQuery, window, document);
