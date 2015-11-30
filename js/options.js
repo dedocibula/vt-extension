@@ -59,14 +59,18 @@ function populateMenu($results, preferences) {
 		termyear.val(preferences['TERMYEAR']);
 	termyear.change();
 
-	$('<input></input>', { value: 'Find Courses', type: 'button' }).on('click', function() {
+	$('#submit').on('click', function(e) {
+		e.preventDefault();
 		var formObject = {};
 		$('form[name="ttform"]').serializeArray().forEach(function(element) {
 			formObject[element.name] = element.value;
 		});
 		store('preferences', formObject);
 		fetchCourses(formObject).done(function(results) {
-			populateCoursesSection($(results));
+			var $results = $(results);
+			fetchTimetable(formObject['TERMYEAR'], function(watchedCourses) {
+				populateCoursesSection($results, watchedCourses);
+			});
 		});
 	}).appendTo('#button-container');
 }
@@ -75,6 +79,10 @@ function populateCoursesSection($results, watchedCourses) {
 	var $coursesRows = $results.find('table.dataentrytable tr');
 	if (!$coursesRows)
 		return;
+
+	$('#container').hide();
+	watched.empty();
+	all.empty();
 
 	var properties = $.map($coursesRows.first().children(), function(e) { return e.innerText.split(' ')[0].trim(); });
 	$.each($coursesRows.slice(1), function(i, e) {
