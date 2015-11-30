@@ -8,19 +8,51 @@
 		REFRESH_INTERVAL: 20 * 1000
 	};
 
-	chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
-		headers = details.requestHeaders;
-
-		for (var i = 0; i < headers.length; i++) {
-			if (headers[i].name == 'Referer') {
-				headers[i].value = settings.REFERER_URL;
-				return { requestHeaders: headers };
-			}
+	function registerListeners(settings, backgroundWorker) {
+		var controllerInvalidate = function(results) {
+			if (results.loggedIn) chrome.extension.getViews({ type: 'tab' }).invalidate(results);
 		}
 
-		headers.push({ name: 'Referer',	value: settings.REFERER_URL });
-		return { requestHeaders: headers };
-	}, { urls: ["<all_urls>"] }, ['requestHeaders', 'blocking']);
+		chrome.webRequest.onBeforeSendHeaders.addListener(function(details) {
+			headers = details.requestHeaders;
+
+			for (var i = 0; i < headers.length; i++) {
+				if (headers[i].name == 'Referer') {
+					headers[i].value = settings.REFERER_URL;
+					return { requestHeaders: headers };
+				}
+			}
+
+			headers.push({ name: 'Referer',	value: settings.REFERER_URL });
+			return { requestHeaders: headers };
+		}, { urls: ["<all_urls>"] }, ['requestHeaders', 'blocking']);
+
+		chrome.browserAction.onClicked.addListener(function(tab) {
+			backgroundWorker.reloadAll(function(results) {
+				var url = results.loggedIn ? settings.MAIN_URL : settings.LOGIN_URL;
+				chrome.tabs.query({ url: url }, function(tabs) {
+					if (tabs.length !== 0) {
+						chrome.tabs.update(tabs[0].id, { url: url, active: true }, function() { controllerInvalidate(results); });
+					} else {
+						chrome.tabs.create({ url: url }, function() { controllerInvalidate(results); });
+					}
+				});
+			});
+		});
+	}
+
+	function registerPublicApi(window, backgroundWorker) {
+		window.updatePreferences = function(preferences, callback) {
+			if (!$.isPlainObject(preferences) || !$.isFunction(callback)) return;
+			backgroundWorker.updatePreferences(preferences);
+			backgroundWorker.reloadAll(callback);
+		}
+
+		window.updateWatchedCourses = function(watchedCourses) {
+			if (!$.isPlainObject(watchedCourses)) return;
+			backgroundWorker.updateWatchedCourses(watchedCourses);
+		}
+	}
 
 	var BackgroundWorker = (function() {
 		function BackgroundWorker(settings, loader, storage) {
@@ -279,25 +311,20 @@
 		return Storage;
 	})();
 
+	// initialize objects
 	var loader = new Loader(settings);
 	var worker = new BackgroundWorker(settings, loader, new Storage());
-	worker.start();
+	
+	// initialize listeners and api
+	registerListeners(settings, worker);
+	registerPublicApi(window, worker);
 
-	chrome.browserAction.onClicked.addListener(function(tab) {
-		worker.reloadAll(function(results) {
-			var url = results.loggedIn ? settings.MAIN_URL : settings.LOGIN_URL;
-			chrome.tabs.query({ url: url }, function(tabs) {
-				if (tabs.length !== 0) {
-					chrome.tabs.update(tabs[0].id, { url: url, active: true });
-				} else {
-					chrome.tabs.create({ url: url });
-				}
-			});
-		});
-	});
-
+	// temporary
 	worker.reloadAll(function(results) {
 		console.log(results);
 	});
+
+	// start worker
+	worker.start();
 })(jQuery, window, document);
 
