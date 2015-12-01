@@ -25,7 +25,7 @@
 
 	// initialize objects
 	var backend = chrome.extension.getBackgroundPage();
-	var controller = new Controller(new Renderer());
+	var controller = new Controller(backend, new Renderer());
 
 	// temporary
 	backend.getLatestResults(function(results) {
