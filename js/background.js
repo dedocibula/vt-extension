@@ -91,14 +91,23 @@
 				$.when(self.loader.getCoursesAsync(current), 
 					self.loader.getTimetableAsync(current.TERMYEAR))
 					.done(function(coursesSection, timetableSection) {
-						var termyear = timetableSection.default || coursesSection.default, removed = false;
+						var termyear = timetableSection.default || coursesSection.default, 
+							removed = false;
 						var watchedSection = self.watchedCourses[termyear] || {};
+						var preferencesSection = self.preferences || {};
+
 						for (var course in watchedSection) {
 							if (course in timetableSection.registered)
 								removed |= delete watchedSection[course];
 						}
 						if (removed) self.updateWatchedCourses(termyear, watchedSection);
-						onReady($.extend({}, coursesSection, timetableSection, { watched: watchedSection }));
+						delete preferencesSection.default;
+
+						onReady($.extend({}, 
+								coursesSection, 
+								timetableSection, 
+								{ watched: watchedSection },
+								{ preferences: preferencesSection }));
 					});
 			},
 
