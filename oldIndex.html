@@ -29,51 +29,31 @@
 					<h4>Preferences</h4>
 				</div>
 				<div class="course-section-table note">
-					<div class="section">
-						<table>
-							<tbody>
-								<tr>
-									<th>Term</th>
-									<th>Campus</th>
-									<th>Major</th>
-									<th>&nbsp;</th>
-								</tr>
-								<tr>
-									<td id="term-container"></td>
-									<td id="campus-container"></td>
-									<td id="subj-container"></td>
-									<td>
-										<div class="buttons right">
-					        				<a id="submit" href="#">Search Courses</a>
-											<div class="clear"></div>
-					    				</div>
-					    			</td>
-					    			<script id="menu-template" type="text/x-handlebars-template">
-										<select name="{{name}}">
-											{{#each values}}
-											<option value="{{@key}}">{{this}}</option>
-											{{/each}}
-										</select>
-									</script>
-									<script id="menu-courses-template" type="text/x-handlebars-template">
-										<select name="{{name}}">
-										</select>
-										<div style="display:none">
-											{{#each values as |value key|}}
-											<div id="{{../name}}-{{key}}">
-												{{#each value as |object|}}
-												{{#each object as |childValue childKey|}}
-												<option value="{{childKey}}">{{childValue}}</option>
-												{{/each}}
-												{{/each}}
-											</div>
-											{{/each}}
-										</div>
-									</script>
-								</tr>
-							</tbody>
-						</table>
-					</div>
+					<form name="ttform">
+						<div class="section">
+							<table>
+								<tbody>
+									<tr>
+										<th>Campus</th>
+										<th>Term</th>
+										<th>Major</th>
+										<th>&nbsp;</th>
+									</tr>
+									<tr>
+										<td id="campus-container"></td>
+										<td id="term-container"></td>
+										<td id="subj-container"></td>
+										<td>
+											<div class="buttons right">
+						        				<a id="submit" href="#">Search Courses</a>
+												<div class="clear"></div>
+						    				</div>
+						    			</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</form>
 				</div>
 			</section>
 			<section id="observed-courses" class="course-section">
@@ -123,7 +103,7 @@
 							</tr>
 						</thead>
 						<tbody class="tbody">
-							<script id="course-template" type="text/x-handlebars-template">
+							<script id="template" type="text/x-handlebars-template">
 								<tr data-orig='{{json this}}'>
 									<td>{{bool Registered}}</td>
 									<td>{{CRN}}</td>
@@ -150,6 +130,7 @@
 			<div class="clear"></div>
 		</div>
 	</div>
+	<script type="text/javascript" src="js/options.js"></script>
 	<script type="text/javascript" src="js/main.js"></script>
 </body>
 </html>
