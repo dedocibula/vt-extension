@@ -243,11 +243,10 @@
 				};
 
 				$results.find('select[name="CAMPUS"] option').each(function() {
-					if (this.selected) menu['CAMPUS']['selected'] = this.value;
 					menu['CAMPUS'][this.value] = this.text;
 				});
 
-				$results.find('select[name="TERMYEAR"] option').first().remove().end().each(function() {
+				$results.find('select[name="TERMYEAR"] option:gt(0)').each(function() {
 					menu['TERMYEAR'][this.value] = this.text;
 					menu['subj_code'][this.value] = [];
 				});
