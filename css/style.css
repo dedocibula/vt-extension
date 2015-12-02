@@ -248,7 +248,7 @@ td span {display: inline-block; margin: 6px 0;  }
 
 #showEditEmail {font-size: 14px;}
 
-#submit {margin-top:10px; display: block;}
+#submit {display: block;}
 #loading, .loading {display:none; float:left; margin-top:2px;}
 
 #submit_add_C4H{
