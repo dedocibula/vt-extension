@@ -255,7 +255,7 @@
 				$results[3].text.split('break').forEach(function(s) {
 					for (var prop in menu['subj_code']) {
 						if (s.indexOf(prop) != -1) {
-							s.split('new Option').slice(1).forEach(function(a) {
+							s.split('new Option').slice(2).forEach(function(a) {
 								var match = a.match(/\(\"(.+)\",\"(.+)\"/); 
 								if (match && match.length == 3) {
 									var obj = {};

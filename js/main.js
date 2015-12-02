@@ -87,7 +87,7 @@
 				var options = $selectMenu.children().detach();
 				$('#subj_code-' + lastTerm).append(options);
 				options = $('#subj_code-' + currentTerm + ' option').detach();
-				$selectMenu.append(options).data('lastTerm', currentTerm);
+				$selectMenu.append(options).data('lastTerm', currentTerm).val($selectMenu.children().first().val());
 			}
 		};
 
