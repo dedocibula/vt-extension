@@ -79,7 +79,7 @@
 				if (!self.timer) {
 					self.reloadAll(function(results) { self._checkRegistrations(results); });
 					self.timer = setInterval(function() {
-						if (!$.isEmptyObject(self.watchedCourses))
+						if (!$.isEmptyObject(self.watchedCourses[self.preferences.default]))
 							self.reloadAll(function(results) { self._checkRegistrations(results); });
 					}, self.settings.REFRESH_INTERVAL);
 				}
@@ -301,7 +301,7 @@
 						}
 					}
 					return course;
-				}).toArray();
+				}).filter(function() { return this.CRN; }).toArray();
 
 				return courses;
 			},
