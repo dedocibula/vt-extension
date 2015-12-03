@@ -51,14 +51,11 @@
 			this.$termContainer = $(elements.termContainer);
 			this.$subjectContainer = $(elements.subjectContainer);
 
-			this.menuTemplate = Handlebars.compile(elements.menuTemplate);
-			this.menuCoursesTemplate = Handlebars.compile(elements.menuCoursesTemplate);
-
 			// courses
 			this.$allSection = $(elements.allSection);
 			this.$watchedSection = $(elements.watchedSection);
 
-			this.courseTemplate = Handlebars.compile(elements.courseTemplate);
+			this._initializeHandlebars(elements);
 		}
 
 		Renderer.prototype = {
@@ -79,6 +76,20 @@
 				});
 
 				return menu;
+			},
+
+			_initializeHandlebars: function(elements) {
+				var self = this;
+
+				// templates
+				self.menuTemplate = Handlebars.compile(elements.menuTemplate);
+				self.menuCoursesTemplate = Handlebars.compile(elements.menuCoursesTemplate);
+				self.courseTemplate = Handlebars.compile(elements.courseTemplate);
+
+				// helpers
+				Handlebars.registerHelper('bool', function(context) {
+					return context ? 'Yes' : 'No';
+				});
 			},
 
 			_changeCourses: function($selectMenu, currentTerm) {
