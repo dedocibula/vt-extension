@@ -196,8 +196,8 @@
 	var controller = new Controller(elements, backend, renderer);
 	controller.invalidateAll();
 
-	// temporary
-	backend.getLatestResults(function(results) {
-		console.log(results);
-	});
+	// for testing purposes
+	// backend.getLatestResults(function(results) {
+	// 	console.log(results);
+	// });
 })(jQuery, Handlebars, window, document);

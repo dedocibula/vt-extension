@@ -335,12 +335,12 @@
 	registerListeners(settings, worker);
 	registerPublicApi(window, worker);
 
-	// temporary
-	worker.reloadAll(function(results) {
-		console.log(results);
-	});
-
 	// start worker
 	worker.start();
+
+	// for testing purposes
+	// worker.reloadAll(function(results) {
+	// 	console.log(results);
+	// });
 })(jQuery, window, document);
 
