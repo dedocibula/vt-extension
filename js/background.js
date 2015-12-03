@@ -93,8 +93,8 @@
 					.done(function(coursesSection, timetableSection) {
 						var termyear = timetableSection.default || coursesSection.default, 
 							removed = false;
-						var watchedSection = self.watchedCourses[termyear] || {};
-						var preferencesSection = self.preferences || {};
+						var watchedSection = $.extend(true, {}, self.watchedCourses[termyear]);
+						var preferencesSection = $.extend(true, {}, self.preferences);
 
 						for (var course in watchedSection) {
 							if (course in timetableSection.registered)
