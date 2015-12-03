@@ -46,9 +46,9 @@
 			backgroundWorker.reloadAll(callback);
 		}
 
-		window.updateWatchedCourses = function(watchedCourses) {
+		window.updateWatchedCourses = function(termyear, watchedCourses) {
 			if (!$.isPlainObject(watchedCourses)) return;
-			backgroundWorker.updateWatchedCourses(watchedCourses);
+			backgroundWorker.updateWatchedCourses(termyear, watchedCourses);
 		}
 
 		window.getLatestResults = function(callback) {
@@ -143,7 +143,7 @@
 							chrome.notifications.create(course, {
 								type: 'basic',
 					          	title: 'VT - Course Notification',
-					          	message: this.title + ' can be registered',
+					          	message: this.Title + ' can be registered',
 					          	iconUrl: 'favicon.png'
 							}, function(id) {
 								setTimeout(function() {

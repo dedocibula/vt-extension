@@ -5,6 +5,7 @@
 		subjectContainer: '#subj-container',
 		allSection: '#all-courses .tbody',
 		watchedSection: '#observed-courses .tbody',
+		submitButton: '#submit-preferences',
 
 		menuTemplate: $('#menu-template').html(),
 		menuCoursesTemplate: $('#menu-courses-template').html(),
@@ -12,18 +13,27 @@
 	};
 
 	var Controller = (function() {
-		function Controller(backend, renderer) {
+		function Controller(elements, backend, renderer) {
 			this.backend = backend;
 			this.renderer = renderer;
+
+			this.allSectionRows = elements.allSection + ' tr';
+			this.watchedSectionRows = elements.watchedSection + ' tr';
+
+			this.$body = $('body');
+			this.$submitButton = $(elements.submitButton);
 		}
 
 		Controller.prototype = {
 			invalidateAll: function() {
 				var self = this;
+
 				self.backend.getLatestResults(function(results) {
 					if (!self._validResults(results)) return;
+					self.watchedCourses = $.extend({}, results.watched);
 					self.menu = self.renderer.renderMenu(results.menu);
 					self._setupPreferences(results.preferences, results.default);
+					self._setupGlobalListeners();
 					if (results.courses.length > 0)
 						self.renderer.renderCourses(results.courses, results.registered, results.watched);
 					else
@@ -35,6 +45,39 @@
 				return $.isPlainObject(results) && results.loggedIn && $.isPlainObject(results.menu) &&
 					results.default && $.isPlainObject(results.preferences) && $.isArray(results.courses) &&
 					$.isPlainObject(results.registered) && $.isPlainObject(results.watched);
+			},
+
+			_setupPreferences: function(preferences, newTerm) {
+				var self = this;
+				
+				self.menu.$termMenu.data('preferences', preferences);
+				if (newTerm) self.menu.$termMenu.val(newTerm).change();
+			},
+
+			_setupGlobalListeners: function() {
+				var self = this;
+
+				self.$body
+					.off('click')
+					.on('click', self.allSectionRows, function() {
+						var $row = $(this);
+						self.renderer.addToWatched($row);
+						self.watchedCourses[$row.data('crn')] = 'U';
+						self.backend.updateWatchedCourses(self.menu.$termMenu.val(), self.watchedCourses);
+					})
+					.on('click', self.watchedSectionRows, function() {
+						var $row = $(this);
+						self.renderer.removeFromWatched($row);
+						delete self.watchedCourses[$row.data('crn')];
+						self.backend.updateWatchedCourses(self.menu.$termMenu.val(), self.watchedCourses);
+					});
+
+				self.$submitButton
+					.off('click')
+					.on('click', function(e) {
+						e.preventDefault();
+						self._updatePreferences();
+					});
 			},
 
 			_updatePreferences: function() {
@@ -49,13 +92,6 @@
 					if (!self._validResults(results)) return;
 					self.renderer.renderCourses(results.courses, results.registered, results.watched);
 				});
-			},
-
-			_setupPreferences: function(preferences, newTerm) {
-				var self = this;
-				
-				self.menu.$termMenu.data('preferences', preferences);
-				if (newTerm) self.menu.$termMenu.val(newTerm).change();
 			}
 		};
 
@@ -113,6 +149,20 @@
 				});
 			},
 
+			addToWatched: function($row) {
+				var self = this;
+
+				self.$watchedSection.append($row.clone());
+				$row.hide();
+			},
+
+			removeFromWatched: function($row) {
+				var self = this;
+
+				self.$allSection.find('tr[data-crn="' + $row.data('crn') + '"]').show();
+				$row.remove();
+			},
+
 			_initializeHandlebars: function(elements) {
 				var self = this;
 
@@ -143,7 +193,7 @@
 	// initialize objects
 	var backend = chrome.extension.getBackgroundPage();
 	var renderer = new Renderer(elements);
-	var controller = new Controller(backend, renderer);
+	var controller = new Controller(elements, backend, renderer);
 	controller.invalidateAll();
 
 	// temporary
