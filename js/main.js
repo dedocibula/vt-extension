@@ -26,14 +26,29 @@
 					self._setupPreferences(results.preferences, results.default);
 					if (results.courses.length > 0)
 						self.renderer.renderCourses(results.courses, results.registered, results.watched);
+					else
+						self._updatePreferences();
 				});
 			},
 
 			_validResults: function(results) {
-				// temporary
 				return $.isPlainObject(results) && results.loggedIn && $.isPlainObject(results.menu) &&
 					results.default && $.isPlainObject(results.preferences) && $.isArray(results.courses) &&
 					$.isPlainObject(results.registered) && $.isPlainObject(results.watched);
+			},
+
+			_updatePreferences: function() {
+				var self = this;
+
+				var preferences = {};
+				preferences[self.menu.$termMenu.attr('name')] = self.menu.$termMenu.val();
+				preferences[self.menu.$campusMenu.attr('name')] = self.menu.$campusMenu.val();
+				preferences[self.menu.$subjectMenu.attr('name')] = self.menu.$subjectMenu.val();
+
+				self.backend.updatePreferences(preferences, function(results) {
+					if (!self._validResults(results)) return;
+					self.renderer.renderCourses(results.courses, results.registered, results.watched);
+				});
 			},
 
 			_setupPreferences: function(preferences, newTerm) {
@@ -86,11 +101,11 @@
 
 				self.$allSection.empty();
 				self.$watchedSection.empty();
-				allCourses.forEach(function() {
-					this.Registered = registered.hasOwnProperty(this.CRN);
-					var $row = $(self.courseTemplate(this));
-					if (registered.hasOwnProperty(this.CRN) || 
-						watched.hasOwnProperty(this.CRN)) {
+				allCourses.forEach(function(course) {
+					course.Registered = registered.hasOwnProperty(course.CRN);
+					var $row = $(self.courseTemplate(course));
+					if (registered.hasOwnProperty(course.CRN) || 
+						watched.hasOwnProperty(course.CRN)) {
 						self.$watchedSection.append($row.clone());
 						$row.hide();
 					}
