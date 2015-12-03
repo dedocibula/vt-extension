@@ -4,7 +4,8 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 	<link rel="stylesheet" href="css/style.css" type="text/css">
 	<script type="text/javascript" src="js/libs/jquery.min.js"></script>
-	<script type="text/javascript" src="js/libs/handlebars.min.js"></script>
+	<script type="text/javascript" src="js/libs/handlebars.runtime.min.js"></script>
+	<script type="text/javascript" src="js/libs/templates.js"></script>
 	<script type="text/javascript" src="js/libs/jquery-ui.min.js"></script>
 	<title>VT Extension</title>
 </head>
@@ -48,28 +49,6 @@
 											<div class="clear"></div>
 					    				</div>
 					    			</td>
-					    			<script id="menu-template" type="text/x-handlebars-template">
-										<select name="{{name}}">
-											{{#each values}}
-											<option value="{{@key}}">{{this}}</option>
-											{{/each}}
-										</select>
-									</script>
-									<script id="menu-courses-template" type="text/x-handlebars-template">
-										<select name="{{name}}">
-										</select>
-										<div style="display:none">
-											{{#each values as |value key|}}
-											<div id="{{../name}}-{{key}}">
-												{{#each value as |object|}}
-												{{#each object as |childValue childKey|}}
-												<option value="{{childKey}}">{{childValue}}</option>
-												{{/each}}
-												{{/each}}
-											</div>
-											{{/each}}
-										</div>
-									</script>
 								</tr>
 							</tbody>
 						</table>
@@ -122,23 +101,7 @@
 								<th>Location</th>
 							</tr>
 						</thead>
-						<tbody class="tbody">
-							<script id="course-template" type="text/x-handlebars-template">
-								<tr data-crn='{{CRN}}'>
-									<td>{{bool Registered}}</td>
-									<td>{{CRN}}</td>
-									<td>{{Course}} - {{Title}}</td>
-									<td>{{Type}}</td>
-									<td>{{Cr}}</td>
-									<td>{{Seats}}/{{Capacity}}</td>
-									<td>{{Instructor}}</td>
-									<td>{{Days}}</td>
-									<td>{{Begin}}</td>
-									<td>{{End}}</td>
-									<td>{{Location}}</td>
-								</tr>
-							</script>
-						</tbody>
+						<tbody class="tbody"></tbody>
 					</table>
 				</div>
 			</section>

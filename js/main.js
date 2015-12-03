@@ -7,9 +7,9 @@
 		watchedSection: '#observed-courses .tbody',
 		submitButton: '#submit-preferences',
 
-		menuTemplate: $('#menu-template').html(),
-		menuCoursesTemplate: $('#menu-courses-template').html(),
-		courseTemplate: $('#course-template').html()
+		menuTemplate: 'menu',
+		menuCoursesTemplate: 'menu-courses',
+		courseTemplate: 'course'
 	};
 
 	var Controller = (function() {
@@ -167,9 +167,9 @@
 				var self = this;
 
 				// templates
-				self.menuTemplate = Handlebars.compile(elements.menuTemplate);
-				self.menuCoursesTemplate = Handlebars.compile(elements.menuCoursesTemplate);
-				self.courseTemplate = Handlebars.compile(elements.courseTemplate);
+				self.menuTemplate = Handlebars.templates[elements.menuTemplate];
+				self.menuCoursesTemplate = Handlebars.templates[elements.menuCoursesTemplate];
+				self.courseTemplate = Handlebars.templates[elements.courseTemplate];
 
 				// helpers
 				Handlebars.registerHelper('bool', function(context) {

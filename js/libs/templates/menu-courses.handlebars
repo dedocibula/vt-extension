@@ -1,0 +1,13 @@
+<select name="{{name}}">
+</select>
+<div style="display:none">
+	{{#each values as |value key|}}
+	<div id="{{../name}}-{{key}}">
+		{{#each value as |object|}}
+		{{#each object as |childValue childKey|}}
+		<option value="{{childKey}}">{{childValue}}</option>
+		{{/each}}
+		{{/each}}
+	</div>
+	{{/each}}
+</div>
