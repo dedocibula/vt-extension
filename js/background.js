@@ -301,7 +301,7 @@
 						}
 					}
 					return course;
-				});
+				}).toArray();
 
 				return courses;
 			},

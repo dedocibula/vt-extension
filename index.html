@@ -78,7 +78,7 @@
 			</section>
 			<section id="observed-courses" class="course-section">
 				<div class="course-section-name">
-					<h4>Observed Courses</h4>
+					<h4>Watched Courses</h4>
 				</div>
 				<div class="course-section-table note">
 					<table>
@@ -124,7 +124,7 @@
 						</thead>
 						<tbody class="tbody">
 							<script id="course-template" type="text/x-handlebars-template">
-								<tr data-orig='{{json this}}'>
+								<tr data-crn='{{CRN}}'>
 									<td>{{bool Registered}}</td>
 									<td>{{CRN}}</td>
 									<td>{{Course}} - {{Title}}</td>

@@ -24,13 +24,16 @@
 					if (!self._validResults(results)) return;
 					self.menu = self.renderer.renderMenu(results.menu);
 					self._setupPreferences(results.preferences, results.default);
+					if (results.courses.length > 0)
+						self.renderer.renderCourses(results.courses, results.registered, results.watched);
 				});
 			},
 
 			_validResults: function(results) {
 				// temporary
 				return $.isPlainObject(results) && results.loggedIn && $.isPlainObject(results.menu) &&
-					results.default && $.isPlainObject(results.preferences);
+					results.default && $.isPlainObject(results.preferences) && $.isArray(results.courses) &&
+					$.isPlainObject(results.registered) && $.isPlainObject(results.watched);
 			},
 
 			_setupPreferences: function(preferences, newTerm) {
@@ -76,6 +79,23 @@
 				});
 
 				return menu;
+			},
+
+			renderCourses: function(allCourses, registered, watched) {
+				var self = this;
+
+				self.$allSection.empty();
+				self.$watchedSection.empty();
+				allCourses.forEach(function() {
+					this.Registered = registered.hasOwnProperty(this.CRN);
+					var $row = $(self.courseTemplate(this));
+					if (registered.hasOwnProperty(this.CRN) || 
+						watched.hasOwnProperty(this.CRN)) {
+						self.$watchedSection.append($row.clone());
+						$row.hide();
+					}
+					self.$allSection.append($row);
+				});
 			},
 
 			_initializeHandlebars: function(elements) {
