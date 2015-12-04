@@ -59,13 +59,15 @@
 
 				self.$body
 					.off('click')
-					.on('click', self.allSectionRows, function() {
+					.on('click', self.allSectionRows, function(e) {
+						if ($(e.originalEvent.target).is('a')) return;
 						var $row = $(this);
 						self.renderer.addToWatched($row);
 						self.watchedCourses[$row.data('crn')] = 'U';
 						self.backend.updateWatchedCourses(self.menu.$termMenu.val(), self.watchedCourses);
 					})
-					.on('click', self.watchedSectionRows, function() {
+					.on('click', self.watchedSectionRows, function(e) {
+						if ($(e.originalEvent.target).is('a')) return;
 						var $row = $(this);
 						self.renderer.removeFromWatched($row);
 						delete self.watchedCourses[$row.data('crn')];

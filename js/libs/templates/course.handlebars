@@ -1,6 +1,12 @@
 <tr data-crn='{{CRN}}'>
 	<td>{{bool Registered}}</td>
-	<td>{{CRN}}</td>
+	<td>
+	{{#if Link}}
+		<a class="show-details" href={{Link}} target="_blank">{{CRN}}</a>
+	{{else}}
+		{{CRN}}
+	{{/if}}
+	</td>
 	<td>{{Course}} - {{Title}}</td>
 	<td>{{Type}}</td>
 	<td>{{Cr}}</td>
