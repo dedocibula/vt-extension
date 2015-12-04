@@ -1,12 +1,14 @@
 (function($, window, document, undefined) {
 	var cachedResults = null;
+	var baseUrl = 'https://banweb.banner.vt.edu/ssb/prod/';
 
 	var settings = {
-		COURSES_URL: 'https://banweb.banner.vt.edu/ssb/prod/HZSKVTSC.P_ProcRequest',
-		TIMETABLE_URL: 'https://banweb.banner.vt.edu/ssb/prod/hzskschd.P_CrseSchdDetl',
-		REFERER_URL: 'https://banweb.banner.vt.edu/ssb/prod/hzskstat.P_DispRegStatPage',
+		BASE_URL: baseUrl,
+		COURSES_URL: baseUrl + 'HZSKVTSC.P_ProcRequest',
+		TIMETABLE_URL: baseUrl + 'hzskschd.P_CrseSchdDetl',
+		REFERER_URL: baseUrl + 'hzskstat.P_DispRegStatPage',
 		MAIN_URL: chrome.extension.getURL('index.html'),
-		LOGIN_URL: 'https://banweb.banner.vt.edu/ssb/prod/twbkwbis.P_GenMenu?name=bmenu.P_MainMnu',
+		LOGIN_URL: baseUrl + 'twbkwbis.P_GenMenu?name=bmenu.P_MainMnu',
 		REFRESH_INTERVAL: 20 * 1000
 	};
 
@@ -271,7 +273,7 @@
 			},
 
 			_processCourses: function($results) {
-				$coursesRows = $results.find('table.dataentrytable tr');
+				var self = this, $coursesRows = $results.find('table.dataentrytable tr');
 
 				var properties = $coursesRows.first().children().map(function() { return this.innerText.split(' ')[0].trim(); });
 				var courses = $coursesRows.slice(1).map(function() {
@@ -291,7 +293,8 @@
 							}
 							else if (properties[j] === 'CRN') {
 								var crn = $(cols[j]).find('a');
-								if (crn.length > 1) course['Link'] = crn[0].href;
+								if (crn.length > 0) 
+									course['Link'] = self.settings.BASE_URL + crn[0].href.match(/.*\(\"(.+?)\"/)[1];
 								course[properties[j]] = cols[i].innerText.trim();
 							} else
 								course[properties[j]] = cols[i].innerText.trim();
