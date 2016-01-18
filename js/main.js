@@ -100,6 +100,33 @@
 		return Controller;
 	})();
 
+	var Backend = (function() {
+		function Backend() {
+		}
+	
+		Backend.prototype = {
+			updatePreferences: function(preferences, callback) {
+				this._internalRequest('updatePreferences', $(preferences).toArray(), callback);
+			},
+
+			updateWatchedCourses: function(termyear, watchedCourses) {
+				this._internalRequest('updateWatchedCourses', $(arguments).toArray());
+			},
+
+			getLatestResults: function(callback) {
+				this._internalRequest('getLatestResults', [], callback);
+			},
+
+			_internalRequest: function(action, argumentArray, callback) {
+				chrome.runtime.sendMessage({ action: action, arguments: argumentArray }, function(response) { 
+					if ($.isFunction(callback)) callback(response);
+				});
+			}
+		};
+	
+		return Backend;
+	})();
+
 	var Renderer = (function() {
 		function Renderer(elements) {
 			// menu
@@ -193,7 +220,7 @@
 	})();
 
 	// initialize objects
-	var backend = chrome.extension.getBackgroundPage();
+	var backend = new Backend();
 	var renderer = new Renderer(elements);
 	var controller = new Controller(elements, backend, renderer);
 	controller.invalidateAll();

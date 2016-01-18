@@ -28,6 +28,13 @@
 			return { requestHeaders: headers };
 		}, { urls: ["<all_urls>"] }, ['requestHeaders', 'blocking']);
 
+		chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+			if (typeof window[request.action] !== 'function') return;
+			request.arguments.push(sendResponse);
+			window[request.action].apply(window, request.arguments);
+			return true;
+		});
+
 		chrome.browserAction.onClicked.addListener(function(tab) {
 			backgroundWorker.reloadAll(function(results) {
 				var url = results.loggedIn ? settings.MAIN_URL : settings.LOGIN_URL;
@@ -148,7 +155,7 @@
 
 			getAddibleCourses: function(callback) {
 				var self = this;
-				callback(self.additions);
+				callback(Object.keys(self.additions));
 			},
 
 			_checkRegistrations: function(results) {
