@@ -9,6 +9,7 @@
 		REFERER_URL: baseUrl + 'hzskstat.P_DispRegStatPage',
 		MAIN_URL: chrome.extension.getURL('index.html'),
 		LOGIN_URL: baseUrl + 'twbkwbis.P_GenMenu?name=bmenu.P_MainMnu',
+		REGISTER_URL: baseUrl + 'bwskfreg.P_AddDropCrse',
 		REFRESH_INTERVAL: 20 * 1000
 	};
 
@@ -39,6 +40,11 @@
 				});
 			});
 		});
+
+		chrome.notifications.onClicked.addListener(function(id) {
+			chrome.tabs.create({ url: settings.REGISTER_URL + '?term_in=' + id });
+			chrome.notifications.clear(id, function() {});
+		});
 	}
 
 	function registerPublicApi(window, backgroundWorker) {
@@ -46,12 +52,12 @@
 			if (!$.isPlainObject(preferences) || !$.isFunction(callback)) return;
 			backgroundWorker.updatePreferences(preferences);
 			backgroundWorker.reloadAll(callback);
-		}
+		};
 
 		window.updateWatchedCourses = function(termyear, watchedCourses) {
 			if (!$.isPlainObject(watchedCourses)) return;
 			backgroundWorker.updateWatchedCourses(termyear, watchedCourses);
-		}
+		};
 
 		window.getLatestResults = function(callback) {
 			if (!$.isFunction(callback)) return;
@@ -61,6 +67,11 @@
 			} else {
 				backgroundWorker.reloadAll(callback);
 			}
+		};
+
+		window.getAddibleCourses = function(callback) {
+			if (!$.isFunction(callback)) return;
+			backgroundWorker.getAddibleCourses(callback);
 		}
 	}
 
@@ -73,7 +84,6 @@
 			this.timer = null;
 			this.preferences = this.storage.retrieve('preferences');
 			this.watchedCourses = this.storage.retrieve('watchedCourses');
-			this.notifications = {};
 		}
 
 		BackgroundWorker.prototype = {
@@ -136,24 +146,30 @@
 				self.storage.persist('watchedCourses', self.watchedCourses);
 			},
 
+			getAddibleCourses: function(callback) {
+				var self = this;
+				callback(self.additions);
+			},
+
 			_checkRegistrations: function(results) {
 				if (!results.loggedIn || $.isEmptyObject(results.watched)) return;
 				var self = this, $results = $(results.courses);
 
+				self.additions = {};
 				$(results.courses).each(function() {
-					if (results.watched.hasOwnProperty(this.CRN) && this.Seats > 0)
-						self.notifications[this.CRN] = {
+					if (this.CRN in results.watched && this.Seats > 0)
+						self.additions[this.CRN] = {
 							title: this.CRN,
 							message: this.Title
 						};
 				});
 
-				if (!$.isEmptyObject(self.notifications)) {
+				if (!$.isEmptyObject(self.additions)) {
 					chrome.notifications.create(results.default, {
 						type: 'list',
-						title: 'VT - Course' + (Object.keys(self.notifications).length > 1 ? 's' : '') + ' can be registered',
+						title: 'VT - Course' + (Object.keys(self.additions).length > 1 ? 's' : '') + ' can be registered',
 						message: '',
-						items: $.map(self.notifications, function(value) { return value; }),
+						items: $.map(self.additions, function(value) { return value; }),
 						iconUrl: 'favicon.png'
 					}, function(id) {
 						setTimeout(function() {
