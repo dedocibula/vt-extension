@@ -73,6 +73,7 @@
 			this.timer = null;
 			this.preferences = this.storage.retrieve('preferences');
 			this.watchedCourses = this.storage.retrieve('watchedCourses');
+			this.notifications = {};
 		}
 
 		BackgroundWorker.prototype = {
@@ -140,22 +141,26 @@
 				var self = this, $results = $(results.courses);
 
 				$(results.courses).each(function() {
-					for (var course in results.watched) {
-						if (this.CRN == course && this.Seats > 0) {
-							chrome.notifications.create(course, {
-								type: 'basic',
-					          	title: 'VT - Course Notification',
-					          	message: this.Title + ' can be registered',
-					          	iconUrl: 'favicon.png'
-							}, function(id) {
-								setTimeout(function() {
-									chrome.notifications.clear(id, function() {});
-								}, 10 * 1000);
-							});
-							break;
-						}
-					}
+					if (results.watched.hasOwnProperty(this.CRN) && this.Seats > 0)
+						self.notifications[this.CRN] = {
+							title: this.CRN,
+							message: this.Title
+						};
 				});
+
+				if (!$.isEmptyObject(self.notifications)) {
+					chrome.notifications.create(results.default, {
+						type: 'list',
+						title: 'VT - Course' + (Object.keys(self.notifications).length > 1 ? 's' : '') + ' can be registered',
+						message: '',
+						items: $.map(self.notifications, function(value) { return value; }),
+						iconUrl: 'favicon.png'
+					}, function(id) {
+						setTimeout(function() {
+							chrome.notifications.clear(id, function() {});
+						}, 10 * 1000);
+					});
+				}
 			}
 		};
 
