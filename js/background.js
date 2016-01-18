@@ -155,7 +155,7 @@
 
 			getAddibleCourses: function(callback) {
 				var self = this;
-				callback(Object.keys(self.additions));
+				callback(Object.keys(self.additions || {}));
 			},
 
 			_checkRegistrations: function(results) {

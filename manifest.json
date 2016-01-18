@@ -13,6 +13,12 @@
 	"permissions": [ "https://banweb.banner.vt.edu/*", "notifications", "webRequest", "webRequestBlocking" ],
 	"icons": {
 		"48": "favicon.png"
-	 },
+	},
+	"content_scripts": [
+		{
+			"matches": [ "https://banweb.banner.vt.edu/ssb/prod/bwskfreg.P_AddDropCrse*" ],
+			"js": [ "js/libs/jquery.min.js", "js/register.js" ]
+		}
+	],
 	"web_accessible_resources": ["favicon.png"]
 }
