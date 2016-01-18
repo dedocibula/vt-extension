@@ -10,6 +10,7 @@
 		MAIN_URL: chrome.extension.getURL('index.html'),
 		LOGIN_URL: baseUrl + 'twbkwbis.P_GenMenu?name=bmenu.P_MainMnu',
 		REGISTER_URL: baseUrl + 'bwskfreg.P_AddDropCrse',
+		DATES_URL: 'https://www.registrar.vt.edu/dates_deadlines/course_request_dates/index.html',
 		REFRESH_INTERVAL: 20 * 1000
 	};
 
@@ -233,6 +234,20 @@
 				});
 				return deferred.promise();
 			},
+
+			getImportantDatesAsync: function(terms) {
+				var self = this;
+
+				var deferred = $.Deferred();
+				$.ajax({
+					url: self.settings.DATES_URL,
+					method: 'GET',
+					type: 'html'
+				}).done(function(results) {
+					deferred.resolve(self._processImportantDates(results.replace(/<img\b[^>]*>/ig, ''), terms));
+				});
+				return deferred.promise();
+			},
 			
 			_processCoursesSection: function(results) {
 				var self = this, $results = $(results);
@@ -264,6 +279,23 @@
 				});
 
 				return timetable;
+			},
+
+			_processImportantDates: function(results, terms) {
+				var self = this, $results = $(results), importantDates = {};
+
+				for (var term in terms) {
+					var parts = terms[term].split(' ');
+					terms[term] = { term: parts[0], year: parts[parts.length - 1] };
+				}
+
+				importantDates.courseRequests = self._processCourseRequests($results, $.extend(true, {}, terms));
+
+				var dropAddBeginnings = self._processDropAddBeginnings($results, $.extend(true, {}, terms));
+				importantDates.addRequests = $.extend(true, {}, dropAddBeginnings);
+				importantDates.dropRequests = $.extend(true, {}, dropAddBeginnings);
+
+				return self._processDropAddEndings(importantDates, $results, $.extend(true, {}, terms));
 			},
 
 			_processMenuSection: function($results) {
@@ -337,6 +369,66 @@
 
 				return courses;
 			},
+
+			_processCourseRequests: function($results, terms) {
+				var $items = $results.find('h3:contains("Course Request")').next('ul').children();
+
+				for (var term in terms) {
+					for (var i = 0; i < $items.length; i++) {
+						var parts = $items[i].innerText.split(':');
+						if (parts[0].match(terms[term].term + ' ' + terms[term].year)) {
+							var match = parts[1].trim().match(/(.+) (\d+)-(\d+), (\d+)/);
+							if (match && match.length == 5)
+								parts[1] = match[1] + ' ' + match[2] + ', ' + match[4] + ' - ' + match[1] + ' ' + match[3] + ', ' + match[4];
+
+							var limits = parts[1].split(' - ');
+							terms[term] = {
+								start: Date.parse(limits[0].trim()),
+								end: Date.parse(limits[1].trim())
+							}
+							break;
+						}
+					}
+				}
+
+				return terms;
+			},
+
+			_processDropAddBeginnings: function($results, terms) {
+				var $items = $results.find('h3:contains("Web Drop/Add Availability Dates")').next('ul').children();
+
+				for (var term in terms) {
+					for (var i = 0; i < $items.length; i++) {
+						var parts = $items[i].innerText.split(' opens ');
+						if (parts[0].match(terms[term].term + ' ' + terms[term].year)) {
+							terms[term] = {	start: Date.parse(parts[1].trim()) };
+							break;
+						}
+					}
+				}
+
+				return terms;
+			},
+
+			_processDropAddEndings: function(importantDates, $results, terms) {
+				var $rows = $results.find('h3:contains("Drop/Add Deadlines")').next('table').find('tr:gt(1)'), 
+					keys = Object.keys(terms).sort();
+
+				$rows.each(function() {
+					var $cols = $(this).children();
+					for (var j = 0; j < keys.length; j++) {
+						var term = terms[keys[j]];
+						if (term && $cols[0].innerText.match(new RegExp('.*' + term.term + '.+' + term.year))) {
+							importantDates.addRequests[keys[j]].end = Date.parse($cols[1].innerText.trim());
+							importantDates.dropRequests[keys[j]].end = Date.parse($cols[2].innerText.trim());
+							delete terms[keys[j]];
+							break;
+						}
+					}
+				});
+
+				return importantDates;
+			}
 		};
 
 		return Loader;
@@ -371,8 +463,11 @@
 	worker.start();
 
 	// for testing purposes
-	// worker.reloadAll(function(results) {
-	// 	console.log(results);
-	// });
+	worker.reloadAll(function(results) {
+		console.log(results);
+		loader.getImportantDatesAsync(results.menu.TERMYEAR).done(function(terms) {
+			console.log(terms);
+		});
+	});
 })(jQuery, window, document);
 
