@@ -11,7 +11,8 @@
 		LOGIN_URL: baseUrl + 'twbkwbis.P_GenMenu?name=bmenu.P_MainMnu',
 		REGISTER_URL: baseUrl + 'bwskfreg.P_AddDropCrse',
 		DATES_URL: 'https://www.registrar.vt.edu/dates_deadlines/course_request_dates/index.html',
-		REFRESH_INTERVAL: 20 * 1000
+		REFRESH_INTERVAL: 20 * 1000,
+		DATES_CHECK_TIME: new Date(0, 0, 0, 0, 5, 0, 0)
 	};
 
 	function registerListeners(settings, backgroundWorker) {
@@ -90,6 +91,9 @@
 			this.storage = storage;
 
 			this.timer = null;
+			this.timeout = null;
+			this.importantDates = null;
+			this.lastChecked = null;
 			this.preferences = this.storage.retrieve('preferences');
 			this.watchedCourses = this.storage.retrieve('watchedCourses');
 		}
@@ -124,11 +128,14 @@
 						if (removed) self.updateWatchedCourses(termyear, watchedSection);
 						delete preferencesSection.default;
 
-						onReady($.extend({}, 
+						self._checkImportantDates(coursesSection.menu.TERMYEAR, function(importantDates) {
+							onReady($.extend({}, 
 								coursesSection, 
 								timetableSection, 
 								{ watched: watchedSection },
-								{ preferences: preferencesSection }));
+								{ preferences: preferencesSection },
+								{ importantDates: importantDates }));
+						});
 					});
 			},
 
@@ -137,6 +144,10 @@
 				if (self.timer) {
 					clearInterval(self.timer);
 					self.timer = null;
+				}
+				if (self.timeout) {
+					clearTimeout(self.timeout);
+					self.timeout = null;
 				}
 			},
 
@@ -186,6 +197,79 @@
 						}, 10 * 1000);
 					});
 				}
+			},
+
+			_checkImportantDates: function(terms, callback) {
+				var self = this, currentDate = new Date();
+				currentDate.setHours(0, 0, 0, 0);
+
+				if (self.lastChecked === currentDate && self.importantDates) {
+					callback(self.importantDates);
+				} else {
+					if (self.timeout) clearTimeout(self.timeout);
+
+					self.loader
+						.getImportantDatesAsync(terms)
+						.done(function(results) {
+							self.lastChecked = currentDate;
+							self.importantDates = self._checkAvailability(results, currentDate);
+							self.timeout = setTimeout(function() { self.reloadAll(function() { }); }, self._nextOccurrence());
+							callback(self.importantDates);
+						});
+				}
+			},
+
+			_checkAvailability: function(results, currentDate) {
+				var self = this, items = [];
+
+				for (var prop in results) {
+					var requestType = prop.replace(/([A-Z])/g, ' $1').toLowerCase();
+					for (var term in results[prop]) {
+						var overlap = self._checkOverlap(requestType, results[prop][term], currentDate);
+						results[prop][term].available = overlap.available;
+						if (overlap.message) items.push(message);
+					}
+				}
+
+				if (!$.isEmptyObject(items)) {
+					chrome.notifications.create('important-dates', {
+						type: 'list',
+						title: 'VT - Important Dates',
+						message: '',
+						items: items,
+						iconUrl: 'favicon.png'
+					}, function(id) {
+						setTimeout(function() {
+							chrome.notifications.clear(id, function() {});
+						}, 10 * 1000);
+					});
+				}
+
+				return results;
+			},
+
+			_checkOverlap: function(requestType, interval, currentDate) {
+				var available = currentDate >= interval.start && currentDate <= interval.end,
+					message = null;
+
+				if (available) {
+					if (currentDate === interval.start) message = 'Today, ' + requestType + ' begin';
+					if (currentDate === interval.end) message = 'Today is the last day for ' + requestType;
+				} else {
+					var tomorrow = new Date(currentDate.getTime());
+					tomorrow.setDate(currentDate.getDate() + 1);
+					if (tomorrow === interval.start) message = 'Tomorrow, ' + requestType + ' become available';
+				}
+				
+				return { available: available, message: message };
+			},
+
+			_nextOccurrence: function() {
+				var self = this, nextOccurrence = new Date();
+				nextOccurrence.setDate(nextOccurrence.getDate() + 1);
+				nextOccurrence.setHours(self.settings.DATES_CHECK_TIME.getHours(), self.settings.DATES_CHECK_TIME.getMinutes(),
+										self.settings.DATES_CHECK_TIME.getSeconds(), self.settings.DATES_CHECK_TIME.getMilliseconds());
+				return nextOccurrence - new Date();
 			}
 		};
 
@@ -282,20 +366,19 @@
 			},
 
 			_processImportantDates: function(results, terms) {
-				var self = this, $results = $(results), importantDates = {};
+				var self = this, $results = $(results), importantDates = {}, terms = $.extend(true, {}, terms);
 
 				for (var term in terms) {
 					var parts = terms[term].split(' ');
 					terms[term] = { term: parts[0], year: parts[parts.length - 1] };
 				}
 
-				importantDates.courseRequests = self._processCourseRequests($results, $.extend(true, {}, terms));
+				importantDates.courseRequests = self._processCourseRequests($results, terms);
 
-				var dropAddBeginnings = self._processDropAddBeginnings($results, $.extend(true, {}, terms));
-				importantDates.addRequests = $.extend(true, {}, dropAddBeginnings);
-				importantDates.dropRequests = $.extend(true, {}, dropAddBeginnings);
+				importantDates.courseAdds = self._processDropAddBeginnings($results, terms);
+				importantDates.courseDrops = $.extend(true, {}, importantDates.courseAdds);
 
-				return self._processDropAddEndings(importantDates, $results, $.extend(true, {}, terms));
+				return self._processDropAddEndings(importantDates, $results, terms);
 			},
 
 			_processMenuSection: function($results) {
@@ -371,7 +454,8 @@
 			},
 
 			_processCourseRequests: function($results, terms) {
-				var $items = $results.find('h3:contains("Course Request")').next('ul').children();
+				var $items = $results.find('h3:contains("Course Request")').next('ul').children()
+					courseRequests = {};
 
 				for (var term in terms) {
 					for (var i = 0; i < $items.length; i++) {
@@ -382,7 +466,7 @@
 								parts[1] = match[1] + ' ' + match[2] + ', ' + match[4] + ' - ' + match[1] + ' ' + match[3] + ', ' + match[4];
 
 							var limits = parts[1].split(' - ');
-							terms[term] = {
+							courseRequests[term] = {
 								start: Date.parse(limits[0].trim()),
 								end: Date.parse(limits[1].trim())
 							}
@@ -391,36 +475,37 @@
 					}
 				}
 
-				return terms;
+				return courseRequests;
 			},
 
 			_processDropAddBeginnings: function($results, terms) {
-				var $items = $results.find('h3:contains("Web Drop/Add Availability Dates")').next('ul').children();
+				var $items = $results.find('h3:contains("Web Drop/Add Availability Dates")').next('ul').children(),
+					dropAddRequests = {};
 
 				for (var term in terms) {
 					for (var i = 0; i < $items.length; i++) {
 						var parts = $items[i].innerText.split(' opens ');
 						if (parts[0].match(terms[term].term + ' ' + terms[term].year)) {
-							terms[term] = {	start: Date.parse(parts[1].trim()) };
+							dropAddRequests[term] = { start: Date.parse(parts[1].trim()) };
 							break;
 						}
 					}
 				}
 
-				return terms;
+				return dropAddRequests;
 			},
 
 			_processDropAddEndings: function(importantDates, $results, terms) {
 				var $rows = $results.find('h3:contains("Drop/Add Deadlines")').next('table').find('tr:gt(1)'), 
-					keys = Object.keys(terms).sort();
+					keys = Object.keys(terms).sort(), terms = $.extend(true, {}, terms);
 
 				$rows.each(function() {
 					var $cols = $(this).children();
 					for (var j = 0; j < keys.length; j++) {
 						var term = terms[keys[j]];
 						if (term && $cols[0].innerText.match(new RegExp('.*' + term.term + '.+' + term.year))) {
-							importantDates.addRequests[keys[j]].end = Date.parse($cols[1].innerText.trim());
-							importantDates.dropRequests[keys[j]].end = Date.parse($cols[2].innerText.trim());
+							importantDates.courseAdds[keys[j]].end = Date.parse($cols[1].innerText.trim());
+							importantDates.courseDrops[keys[j]].end = Date.parse($cols[2].innerText.trim());
 							delete terms[keys[j]];
 							break;
 						}
@@ -463,11 +548,8 @@
 	worker.start();
 
 	// for testing purposes
-	worker.reloadAll(function(results) {
-		console.log(results);
-		loader.getImportantDatesAsync(results.menu.TERMYEAR).done(function(terms) {
-			console.log(terms);
-		});
-	});
+	// worker.reloadAll(function(results) {
+	// 	console.log(results);
+	// });
 })(jQuery, window, document);
 
