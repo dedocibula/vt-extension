@@ -1,15 +1,18 @@
 (function($, Handlebars, window, document, undefined) {
 	var elements = {
+		notificationContainer: '#notification-container',
 		campusContainer: '#campus-container',
 		termContainer: '#term-container',
 		subjectContainer: '#subj-container',
 		allSection: '#all-courses .tbody',
 		watchedSection: '#observed-courses .tbody',
 		submitButton: '#submit-preferences',
+		closeButtons: '.close',
 
 		menuTemplate: 'menu',
 		menuCoursesTemplate: 'menu-courses',
-		courseTemplate: 'course'
+		courseTemplate: 'course',
+		notificationTemplate: 'notification'
 	};
 
 	var Controller = (function() {
@@ -19,6 +22,7 @@
 
 			this.allSectionRows = elements.allSection + ' tr';
 			this.watchedSectionRows = elements.watchedSection + ' tr';
+			this.closeButtons = elements.closeButtons;
 
 			this.$body = $('body');
 			this.$submitButton = $(elements.submitButton);
@@ -31,6 +35,7 @@
 				self.backend.getLatestResults(function(results) {
 					if (!self._validResults(results)) return;
 					self.watchedCourses = $.extend({}, results.watched);
+					self._setupNotifications(results.importantDates, results.default);
 					self.menu = self.renderer.renderMenu(results.menu);
 					self._setupPreferences(results.preferences, results.default);
 					self._setupGlobalListeners();
@@ -44,7 +49,8 @@
 			_validResults: function(results) {
 				return $.isPlainObject(results) && results.loggedIn && $.isPlainObject(results.menu) &&
 					results.default && $.isPlainObject(results.preferences) && $.isArray(results.courses) &&
-					$.isPlainObject(results.registered) && $.isPlainObject(results.watched);
+					$.isPlainObject(results.registered) && $.isPlainObject(results.watched) && 
+					$.isPlainObject(results.importantDates);
 			},
 
 			_setupPreferences: function(preferences, newTerm) {
@@ -72,6 +78,10 @@
 						self.renderer.removeFromWatched($row);
 						delete self.watchedCourses[$row.data('crn')];
 						self.backend.updateWatchedCourses(self.menu.$termMenu.val(), self.watchedCourses);
+					})
+					.on('click', self.closeButtons, function(e) {
+						e.preventDefault();
+						$(this).parent().animate({ height: 0, opacity: 0 }, null, function() { $(this).remove(); });
 					});
 
 				self.$submitButton
@@ -92,8 +102,21 @@
 
 				self.backend.updatePreferences(preferences, function(results) {
 					if (!self._validResults(results)) return;
+					self._setupNotifications(results.importantDates, results.default);
 					self.renderer.renderCourses(results.courses, results.registered, results.watched);
 				});
+			},
+
+			_setupNotifications: function(importantDates, term) {
+				var self = this;
+
+				var notifications = [];
+				for (var prop in importantDates) {
+					if (importantDates[prop][term] && importantDates[prop][term].available)
+						notifications.push({ event: prop, endDate: new Date(importantDates[prop][term].end) });
+				}
+
+				self.renderer.renderNotifications(notifications);
 			}
 		};
 
@@ -129,6 +152,9 @@
 
 	var Renderer = (function() {
 		function Renderer(elements) {
+			// notifications
+			this.$notificationContainer = $(elements.notificationContainer);
+
 			// menu
 			this.$campusContainer = $(elements.campusContainer);
 			this.$termContainer = $(elements.termContainer);
@@ -178,6 +204,17 @@
 				});
 			},
 
+			renderNotifications: function(notifications) {
+				var self = this;
+
+				self.$notificationContainer.empty();
+				notifications.forEach(function(notification) {
+					notification.event = notification.event.replace(/([A-Z])/g, ' $1').toUpperCase();
+					notification.endDate = notification.endDate.toLocaleDateString();
+					self.$notificationContainer.append(self.notificationTemplate(notification));
+				});
+			},
+
 			addToWatched: function($row) {
 				var self = this;
 
@@ -199,6 +236,7 @@
 				self.menuTemplate = Handlebars.templates[elements.menuTemplate];
 				self.menuCoursesTemplate = Handlebars.templates[elements.menuCoursesTemplate];
 				self.courseTemplate = Handlebars.templates[elements.courseTemplate];
+				self.notificationTemplate = Handlebars.templates[elements.notificationTemplate];
 
 				// helpers
 				Handlebars.registerHelper('bool', function(context) {

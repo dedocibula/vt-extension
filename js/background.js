@@ -202,6 +202,7 @@
 			_checkImportantDates: function(terms, callback) {
 				var self = this, currentDate = new Date();
 				currentDate.setHours(0, 0, 0, 0);
+				currentDate = currentDate.getTime();
 
 				if (self.lastChecked === currentDate && self.importantDates) {
 					callback(self.importantDates);
@@ -256,9 +257,9 @@
 					if (currentDate === interval.start) message = 'Today, ' + requestType + ' begin';
 					if (currentDate === interval.end) message = 'Today is the last day for ' + requestType;
 				} else {
-					var tomorrow = new Date(currentDate.getTime());
-					tomorrow.setDate(currentDate.getDate() + 1);
-					if (tomorrow === interval.start) message = 'Tomorrow, ' + requestType + ' become available';
+					var tomorrow = new Date(currentDate);
+					tomorrow.setDate(tomorrow.getDate() + 1);
+					if (tomorrow.getTime() === interval.start) message = 'Tomorrow, ' + requestType + ' become available';
 				}
 				
 				return { available: available, message: message };
@@ -269,7 +270,7 @@
 				nextOccurrence.setDate(nextOccurrence.getDate() + 1);
 				nextOccurrence.setHours(self.settings.DATES_CHECK_TIME.getHours(), self.settings.DATES_CHECK_TIME.getMinutes(),
 										self.settings.DATES_CHECK_TIME.getSeconds(), self.settings.DATES_CHECK_TIME.getMilliseconds());
-				return nextOccurrence - new Date();
+				return nextOccurrence.getTime() - Date.now();
 			}
 		};
 
@@ -314,7 +315,7 @@
 					type: 'html',
 					data: data
 				}).done(function(results) {
-					deferred.resolve(self._processTimetableSection(results.replace(/<img\b[^>]*>/ig, '')));
+					deferred.resolve(self._processTimetableSection(results.replace(/<img\b[^>]*>/ig, ''), term));
 				});
 				return deferred.promise();
 			},
@@ -346,17 +347,13 @@
 					coursesSection;
 			},
 
-			_processTimetableSection: function(results) {
+			_processTimetableSection: function(results, term) {
 				var self = this, $results = $(results);
 				var timetable = {
 					'registered': {}
 				}
 
-				$results.find('a[href$="print_friendly=Y"]').each(function() {
-					var match = this.href.match(/term_in=(.+)&/);
-					if (match && match.length == 2)
-						timetable['default'] = match[1];
-				});
+				if (results.match(new RegExp(term.substring(0, 4)))) timetable['default'] = term;
 
 				$results.find('table.datadisplaytable tr:gt(1) td:first-child > a').each(function() { 
 					timetable['registered'][this.text.trim()] = 'R';
