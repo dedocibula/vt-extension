@@ -565,8 +565,8 @@
 	worker.start();
 
 	// for testing purposes
-	worker.reloadAll(function(results) {
-		console.log(results);
-	});
+	// worker.reloadAll(function(results) {
+	// 	console.log(results);
+	// });
 })(jQuery, window, document);
 
