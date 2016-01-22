@@ -118,8 +118,8 @@
 				if (!self.timer) {
 					self.reloadAll(function(results) { self._checkRegistrations(results); });
 					self.timer = setInterval(function() {
-						if (!$.isEmptyObject(self.watchedCourses[self.preferences.default]) &&
-							!self.reloading) {
+						if ((!$.isEmptyObject(self.watchedCourses[self.preferences.default]) &&
+							!self.reloading) || self.isOnline) {
 							self.reloading = true;
 							self.reloadAll(function(results) { self._checkRegistrations(results); });
 						}
