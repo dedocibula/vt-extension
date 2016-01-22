@@ -7,6 +7,9 @@ Provided features:
 * Semester schedule visualization
 * Course watch enabling/disabling
 * Registration notifications
+* Course descriptions
+* Important dates and deadlines notifications (course request, drop/add)
+* Automatic course registration and course drop
 
 ### Installation
 
