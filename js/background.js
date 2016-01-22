@@ -99,6 +99,8 @@
 			this.storage = storage;
 
 			this.timer = null;
+			this.reloading = false;
+			this.isOnline = false;
 			this.timeout = null;
 			this.importantDates = null;
 			this.lastChecked = null;
@@ -116,8 +118,11 @@
 				if (!self.timer) {
 					self.reloadAll(function(results) { self._checkRegistrations(results); });
 					self.timer = setInterval(function() {
-						if (!$.isEmptyObject(self.watchedCourses[self.preferences.default]))
+						if (!$.isEmptyObject(self.watchedCourses[self.preferences.default]) &&
+							!self.reloading) {
+							self.reloading = true;
 							self.reloadAll(function(results) { self._checkRegistrations(results); });
+						}
 					}, self.settings.REFRESH_INTERVAL);
 				}
 			},
@@ -128,7 +133,8 @@
 				$.when(self.loader.getCoursesAsync(current), 
 					self.loader.getTimetableAsync(current.TERMYEAR))
 					.done(function(coursesSection, timetableSection) {
-						chrome.browserAction.setIcon({ path: self.settings.ONLINE_ICON });
+						self.reloading = false;
+
 						var termyear = timetableSection.default || coursesSection.default, 
 							removed = false;
 						var watchedSection = $.extend(true, {}, self.watchedCourses[termyear]);
@@ -149,9 +155,11 @@
 								{ preferences: preferencesSection },
 								{ importantDates: importantDates }));
 						});
+
+						self._setOnline(true);
 					})
 					.fail(function(status) {
-						chrome.browserAction.setIcon({ path: self.settings.OFFLINE_ICON });
+						self._setOnline(false);						
 					});
 			},
 
@@ -298,6 +306,13 @@
 				nextOccurrence.setHours(self.settings.DATES_CHECK_TIME.getHours(), self.settings.DATES_CHECK_TIME.getMinutes(),
 										self.settings.DATES_CHECK_TIME.getSeconds(), self.settings.DATES_CHECK_TIME.getMilliseconds());
 				return nextOccurrence.getTime() - Date.now();
+			},
+
+			_setOnline: function(online) {
+				var self = this;
+				if (self.isOnline != online)
+					chrome.browserAction.setIcon({ path: (online ? self.settings.ONLINE_ICON : self.settings.OFFLINE_ICON) });
+				self.isOnline = online;
 			}
 		};
 

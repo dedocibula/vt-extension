@@ -4,7 +4,7 @@
 	"manifest_version": 2,
 	"description": "Do not miss your VT course registration ever again...",
 	"browser_action": {
-		"default_icon": "favicon.png",
+		"default_icon": "favicon-offline.png",
 		"default_title": "VT Extension"
 	},
 	"background": {
