@@ -100,7 +100,7 @@
 
 			this.timer = null;
 			this.reloading = false;
-			this.isOnline = false;
+			this.online = false;
 			this.timeout = null;
 			this.importantDates = null;
 			this.lastChecked = null;
@@ -119,7 +119,7 @@
 					self.reloadAll(function(results) { self._checkRegistrations(results); });
 					self.timer = setInterval(function() {
 						if ((!$.isEmptyObject(self.watchedCourses[self.preferences.default]) &&
-							!self.reloading) || self.isOnline) {
+							!self.reloading) || !self.online) {
 							self.reloading = true;
 							self.reloadAll(function(results) { self._checkRegistrations(results); });
 						}
@@ -310,9 +310,9 @@
 
 			_setOnline: function(online) {
 				var self = this;
-				if (self.isOnline != online)
+				if (self.online != online)
 					chrome.browserAction.setIcon({ path: (online ? self.settings.ONLINE_ICON : self.settings.OFFLINE_ICON) });
-				self.isOnline = online;
+				self.online = online;
 			}
 		};
 
