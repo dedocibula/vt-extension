@@ -1,6 +1,6 @@
 {
 	"name": "VT by DedoCibula",
-	"version": "1.0",
+	"version": "2.0",
 	"manifest_version": 2,
 	"description": "Do not miss your VT course registration ever again...",
 	"browser_action": {
