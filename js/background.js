@@ -12,7 +12,10 @@
 		REGISTER_URL: baseUrl + 'bwskfreg.P_AddDropCrse',
 		DATES_URL: 'https://www.registrar.vt.edu/dates_deadlines/course_request_dates/index.html',
 		REFRESH_INTERVAL: 20 * 1000,
-		DATES_CHECK_TIME: new Date(0, 0, 0, 0, 5, 0, 0)
+		DATES_CHECK_TIME: new Date(0, 0, 0, 0, 5, 0, 0),
+
+		ONLINE_ICON: 'favicon.png',
+		OFFLINE_ICON: 'favicon-offline.png'
 	};
 
 	function registerListeners(settings, backgroundWorker) {
@@ -125,6 +128,7 @@
 				$.when(self.loader.getCoursesAsync(current), 
 					self.loader.getTimetableAsync(current.TERMYEAR))
 					.done(function(coursesSection, timetableSection) {
+						chrome.browserAction.setIcon({ path: self.settings.ONLINE_ICON });
 						var termyear = timetableSection.default || coursesSection.default, 
 							removed = false;
 						var watchedSection = $.extend(true, {}, self.watchedCourses[termyear]);
@@ -145,6 +149,9 @@
 								{ preferences: preferencesSection },
 								{ importantDates: importantDates }));
 						});
+					})
+					.fail(function(status) {
+						chrome.browserAction.setIcon({ path: self.settings.OFFLINE_ICON });
 					});
 			},
 
@@ -210,7 +217,7 @@
 						title: 'VT - Course' + (Object.keys(self.additions).length > 1 ? 's' : '') + ' can be registered',
 						message: '',
 						items: $.map(self.additions, function(value) { return value; }),
-						iconUrl: 'favicon.png'
+						iconUrl: self.settings.ONLINE_ICON
 					}, function(id) {
 						setTimeout(function() {
 							chrome.notifications.clear(id, function() {});
@@ -321,6 +328,8 @@
 					data: data
 				}).done(function(results) {
 					deferred.resolve(self._processCoursesSection(results));
+				}).fail(function(ignore, status) {
+					deferred.reject(status);
 				});
 				return deferred.promise();
 			},
@@ -336,6 +345,8 @@
 					data: data
 				}).done(function(results) {
 					deferred.resolve(self._processTimetableSection(results.replace(/<img\b[^>]*>/ig, ''), term));
+				}).fail(function(ignore, status) {
+					deferred.reject(status);
 				});
 				return deferred.promise();
 			},
@@ -350,6 +361,8 @@
 					type: 'html'
 				}).done(function(results) {
 					deferred.resolve(self._processImportantDates(results.replace(/<img\b[^>]*>/ig, ''), terms));
+				}).fail(function(ignore, status) {
+					deferred.reject(status);
 				});
 				return deferred.promise();
 			},
