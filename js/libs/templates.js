@@ -19,6 +19,8 @@ templates['course'] = template({"1":function(container,depth0,helpers,partials,d
 
   return "<tr data-crn='"
     + alias4(((helper = (helper = helpers.CRN || (depth0 != null ? depth0.CRN : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"CRN","hash":{},"data":data}) : helper)))
+    + "' data-registered='"
+    + alias4(((helper = (helper = helpers.Registered || (depth0 != null ? depth0.Registered : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"Registered","hash":{},"data":data}) : helper)))
     + "'>\r\n	<td>"
     + alias4((helpers.bool || (depth0 && depth0.bool) || alias2).call(alias1,(depth0 != null ? depth0.Registered : depth0),{"name":"bool","hash":{},"data":data}))
     + "</td>\r\n	<td>\r\n"

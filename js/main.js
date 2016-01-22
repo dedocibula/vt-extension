@@ -8,6 +8,7 @@
 		watchedSection: '#observed-courses .tbody',
 		submitButton: '#submit-preferences',
 		closeButtons: '.close',
+		dialog: '#dialog',
 
 		menuTemplate: 'menu',
 		menuCoursesTemplate: 'menu-courses',
@@ -26,6 +27,7 @@
 
 			this.$body = $('body');
 			this.$submitButton = $(elements.submitButton);
+			this.$dialog = $(elements.dialog);
 		}
 
 		Controller.prototype = {
@@ -63,6 +65,30 @@
 			_setupGlobalListeners: function() {
 				var self = this;
 
+				self.$dialog.dialog({
+					autoOpen: false,
+					width: 300,
+					resizable: false,
+					draggable: false,
+					modal: true,
+					buttons: [
+						{
+							text: 'Yes',
+							click: function() {
+								var $this = $(this);
+								self.backend.dropCourse(self.menu.$termMenu.val(), $this.data('crn'));
+								$this.dialog('close');
+							}
+						},
+						{
+							text: 'No',
+							click: function() {
+								$(this).dialog('close');
+							}
+						}
+					]
+				});
+
 				self.$body
 					.off('click')
 					.on('click', self.allSectionRows, function(e) {
@@ -75,9 +101,15 @@
 					.on('click', self.watchedSectionRows, function(e) {
 						if ($(e.originalEvent.target).is('a')) return;
 						var $row = $(this);
-						self.renderer.removeFromWatched($row);
-						delete self.watchedCourses[$row.data('crn')];
-						self.backend.updateWatchedCourses(self.menu.$termMenu.val(), self.watchedCourses);
+						if (self.availableRequests && 
+							self.availableRequests.courseDrops && 
+							$row.data('registered')) {
+							self.$dialog.data('crn', $row.data('crn')).dialog('open');
+						} else {
+							self.renderer.removeFromWatched($row);
+							delete self.watchedCourses[$row.data('crn')];
+							self.backend.updateWatchedCourses(self.menu.$termMenu.val(), self.watchedCourses);
+						}
 					})
 					.on('click', self.closeButtons, function(e) {
 						e.preventDefault();
@@ -111,9 +143,12 @@
 				var self = this;
 
 				var notifications = [];
+				self.availableRequests = {};
 				for (var prop in importantDates) {
-					if (importantDates[prop][term] && importantDates[prop][term].available)
+					if (importantDates[prop][term] && importantDates[prop][term].available) {
 						notifications.push({ event: prop, endDate: new Date(importantDates[prop][term].end) });
+						self.availableRequests[prop] = true;
+					}
 				}
 
 				self.renderer.renderNotifications(notifications);
@@ -138,6 +173,10 @@
 
 			getLatestResults: function(callback) {
 				this._internalRequest('getLatestResults', [], callback);
+			},
+
+			dropCourse: function(termyear, course) {
+				this._internalRequest('dropCourse', $(arguments).toArray());
 			},
 
 			_internalRequest: function(action, argumentArray, callback) {

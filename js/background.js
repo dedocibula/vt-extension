@@ -78,10 +78,15 @@
 			}
 		};
 
-		window.getAddibleCourses = function(callback) {
+		window.dropCourse = function(termyear, course) {
+			if (!course) return;
+			backgroundWorker.dropCourse(termyear, course);
+		};
+
+		window.getCourseChanges = function(callback) {
 			if (!$.isFunction(callback)) return;
-			backgroundWorker.getAddibleCourses(callback);
-		}
+			backgroundWorker.getCourseChanges(callback);
+		};
 	}
 
 	var BackgroundWorker = (function() {
@@ -94,6 +99,10 @@
 			this.timeout = null;
 			this.importantDates = null;
 			this.lastChecked = null;
+
+			this.additions = {};
+			this.removals = [];
+
 			this.preferences = this.storage.retrieve('preferences');
 			this.watchedCourses = this.storage.retrieve('watchedCourses');
 		}
@@ -165,17 +174,28 @@
 				self.storage.persist('watchedCourses', self.watchedCourses);
 			},
 
-			getAddibleCourses: function(callback) {
+			dropCourse: function(termyear, course) {
 				var self = this;
-				callback(Object.keys(self.additions || {}));
+				self.removals.push(course);
+				chrome.tabs.create({ url: self.settings.REGISTER_URL + '?term_in=' + termyear });
+			},
+
+			getCourseChanges: function(callback) {
+				var self = this;
+				callback({
+					additions: Object.keys(self.additions),
+					removals: self.removals
+				});
 				self.additions = {};
+				self.removals = [];
 			},
 
 			_checkRegistrations: function(results) {
-				if (!results.loggedIn || $.isEmptyObject(results.watched)) return;
+				if (!results.loggedIn || 
+					$.isEmptyObject(results.watched) ||
+					!results.importantDates.courseAdds[results.default].available) return;
 				var self = this, $results = $(results.courses);
 
-				self.additions = {};
 				$(results.courses).each(function() {
 					if (this.CRN in results.watched && this.Seats > 0)
 						self.additions[this.CRN] = {
@@ -545,8 +565,8 @@
 	worker.start();
 
 	// for testing purposes
-	// worker.reloadAll(function(results) {
-	// 	console.log(results);
-	// });
+	worker.reloadAll(function(results) {
+		console.log(results);
+	});
 })(jQuery, window, document);
 

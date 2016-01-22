@@ -2,6 +2,7 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" href="css/jquery-ui.min.css" type="text/css">
 	<link rel="stylesheet" href="css/style.css" type="text/css">
 	<script type="text/javascript" src="js/libs/jquery.min.js"></script>
 	<script type="text/javascript" src="js/libs/handlebars.runtime.min.js"></script>
@@ -26,94 +27,97 @@
 		</div>
 		<div id="content">
 			<div id="notification-container"></div>
-			<section id="preferences" class="course-section">
-				<div class="course-section-name">
-					<h4>Preferences</h4>
-				</div>
-				<div class="course-section-table note">
-					<div class="section">
-						<table>
-							<tbody>
-								<tr>
-									<th>Term</th>
-									<th>Campus</th>
-									<th>Major</th>
-									<th>&nbsp;</th>
-								</tr>
-								<tr>
-									<td id="term-container"></td>
-									<td id="campus-container"></td>
-									<td id="subj-container"></td>
-									<td>
-										<div class="buttons right">
-											<a id="submit-preferences" href="#">Search Courses</a>
-											<div class="clear"></div>
-										</div>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</section>
-			<section id="observed-courses" class="course-section">
-				<div class="course-section-name">
-					<h4>Watched Courses</h4>
-				</div>
-				<div class="course-section-table note">
-					<table>
-						<thead>
-							<tr>
-								<th>Registered</th>
-								<th>CRN</th>
-								<th>Course Title</th>
-								<th>Type</th>
-								<th>Credits</th>
-								<th>Capacity</th>
-								<th>Instructor</th>
-								<th>Days</th>
-								<th>Begin</th>
-								<th>End</th>
-								<th>Location</th>
-							</tr>
-						</thead>
-						<tbody class="tbody"></tbody>
-					</table>
-				</div>
-			</section>
-			<section id="all-courses" class="course-section">
-				<div class="course-section-name">
-					<h4>All Courses</h4>
-				</div>
-				<div class="course-section-table note">
-					<table>
-						<thead>
-							<tr>
-								<th>Registered</th>
-								<th>CRN</th>
-								<th>Course Title</th>
-								<th>Type</th>
-								<th>Credits</th>
-								<th>Capacity</th>
-								<th>Instructor</th>
-								<th>Days</th>
-								<th>Begin</th>
-								<th>End</th>
-								<th>Location</th>
-							</tr>
-						</thead>
-						<tbody class="tbody"></tbody>
-					</table>
-				</div>
-			</section>
-		</div>
-		<div id="footer" class="note">
-			<div class="left">
-				Created by DedoCibula
+			<div id="dialog" title="Confirmation">
+				<p>Are you sure you wish to drop this course?</p>
 			</div>
-			<div class="clear"></div>
-		</div>
+		<section id="preferences" class="course-section">
+			<div class="course-section-name">
+				<h4>Preferences</h4>
+			</div>
+			<div class="course-section-table note">
+				<div class="section">
+					<table>
+						<tbody>
+							<tr>
+								<th>Term</th>
+								<th>Campus</th>
+								<th>Major</th>
+								<th>&nbsp;</th>
+							</tr>
+							<tr>
+								<td id="term-container"></td>
+								<td id="campus-container"></td>
+								<td id="subj-container"></td>
+								<td>
+									<div class="buttons right">
+										<a id="submit-preferences" href="#">Search Courses</a>
+										<div class="clear"></div>
+									</div>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</section>
+		<section id="observed-courses" class="course-section">
+			<div class="course-section-name">
+				<h4>Watched Courses</h4>
+			</div>
+			<div class="course-section-table note">
+				<table>
+					<thead>
+						<tr>
+							<th>Registered</th>
+							<th>CRN</th>
+							<th>Course Title</th>
+							<th>Type</th>
+							<th>Credits</th>
+							<th>Capacity</th>
+							<th>Instructor</th>
+							<th>Days</th>
+							<th>Begin</th>
+							<th>End</th>
+							<th>Location</th>
+						</tr>
+					</thead>
+					<tbody class="tbody"></tbody>
+				</table>
+			</div>
+		</section>
+		<section id="all-courses" class="course-section">
+			<div class="course-section-name">
+				<h4>All Courses</h4>
+			</div>
+			<div class="course-section-table note">
+				<table>
+					<thead>
+						<tr>
+							<th>Registered</th>
+							<th>CRN</th>
+							<th>Course Title</th>
+							<th>Type</th>
+							<th>Credits</th>
+							<th>Capacity</th>
+							<th>Instructor</th>
+							<th>Days</th>
+							<th>Begin</th>
+							<th>End</th>
+							<th>Location</th>
+						</tr>
+					</thead>
+					<tbody class="tbody"></tbody>
+				</table>
+			</div>
+		</section>
 	</div>
-	<script type="text/javascript" src="js/main.js"></script>
+	<div id="footer" class="note">
+		<div class="left">
+			Created by DedoCibula
+		</div>
+		<div class="clear"></div>
+	</div>
+</div>
+<script type="text/javascript" src="js/main.js"></script>
 </body>
 </html>
