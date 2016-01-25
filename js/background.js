@@ -16,7 +16,8 @@
 
 		ONLINE_ICON: 'favicon.png',
 		OFFLINE_ICON: 'favicon-offline.png',
-		BADGE_COLOR: [232, 76, 61, 255]
+		BADGE_COLOR: [232, 76, 61, 255],
+		SOUND: 'chime.ogg'
 	};
 
 	function registerListeners(settings, backgroundWorker) {
@@ -103,6 +104,7 @@
 			this.reloading = false;
 			this.online = false;
 			this.badgeText = '';
+			this.sound = null;
 			this.timeout = null;
 			this.importantDates = null;
 			this.lastChecked = null;
@@ -230,6 +232,8 @@
 							chrome.notifications.clear(id, function() {});
 						}, 10 * 1000);
 					});
+
+					self._playSound();
 				}
 			},
 
@@ -279,6 +283,7 @@
 						}, 10 * 1000);
 					});
 
+					self._playSound();
 					self._setBadge('!');
 				} else {
 					self._setBadge('');
@@ -325,6 +330,13 @@
 					chrome.browserAction.setBadgeText({ text: badgeText });
 				}
 				self.badgeText = badgeText;
+			},
+
+			_playSound: function() {
+				var self = this;
+				if (!self.sound)
+					self.sound = new Audio(self.settings.SOUND);
+				self.sound.play();
 			}
 		};
 
