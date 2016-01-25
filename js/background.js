@@ -163,7 +163,8 @@
 						self._setOnline(true);
 					})
 					.fail(function(status) {
-						self._setOnline(false);						
+						self._setOnline(false);
+						self.lastChecked = null;				
 					});
 			},
 
