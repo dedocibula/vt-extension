@@ -244,12 +244,14 @@
 			},
 
 			renderNotifications: function(notifications) {
-				var self = this;
+				var self = this, today = new Date();
+				today.setHours(0, 0, 0, 0);
 
 				self.$notificationContainer.empty();
 				notifications.forEach(function(notification) {
 					notification.event = notification.event.replace(/([A-Z])/g, ' $1').toUpperCase();
-					notification.endDate = notification.endDate.toLocaleDateString();
+					notification.endDate = today.getTime() !== notification.endDate.getTime() ? 
+																notification.endDate.toLocaleDateString() : 'TODAY';
 					self.$notificationContainer.append(self.notificationTemplate(notification));
 				});
 			},
@@ -280,6 +282,10 @@
 				// helpers
 				Handlebars.registerHelper('bool', function(context) {
 					return context ? 'Yes' : 'No';
+				});
+
+				Handlebars.registerHelper('color', function(context) {
+					return context !== 'TODAY' ? 'warn' : 'error';
 				});
 			},
 

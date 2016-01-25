@@ -98,12 +98,14 @@ templates['menu'] = template({"1":function(container,depth0,helpers,partials,dat
     + "</select>";
 },"useData":true});
 templates['notification'] = template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
-    var helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
+    var helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3=container.escapeExpression, alias4="function";
 
-  return "<div id=\"flash\" class=\"warn\">\r\n	<a href=\"#\" class=\"close\">×</a>\r\n	<div>\r\n		<img alt=\"logo\" src=\"images/glyphicons_warning_sign.png\" width=\"10\" height=\"10\">\r\n		"
-    + alias4(((helper = (helper = helpers.event || (depth0 != null ? depth0.event : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"event","hash":{},"data":data}) : helper)))
+  return "<div id=\"flash\" class=\""
+    + alias3((helpers.color || (depth0 && depth0.color) || alias2).call(alias1,(depth0 != null ? depth0.endDate : depth0),{"name":"color","hash":{},"data":data}))
+    + "\">\r\n	<a href=\"#\" class=\"close\">×</a>\r\n	<div>\r\n		<img alt=\"logo\" src=\"images/glyphicons_warning_sign.png\" width=\"10\" height=\"10\">\r\n		"
+    + alias3(((helper = (helper = helpers.event || (depth0 != null ? depth0.event : depth0)) != null ? helper : alias2),(typeof helper === alias4 ? helper.call(alias1,{"name":"event","hash":{},"data":data}) : helper)))
     + " are available until "
-    + alias4(((helper = (helper = helpers.endDate || (depth0 != null ? depth0.endDate : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"endDate","hash":{},"data":data}) : helper)))
+    + alias3(((helper = (helper = helpers.endDate || (depth0 != null ? depth0.endDate : depth0)) != null ? helper : alias2),(typeof helper === alias4 ? helper.call(alias1,{"name":"endDate","hash":{},"data":data}) : helper)))
     + ".\r\n	</div>\r\n</div>";
 },"useData":true});
 })();
