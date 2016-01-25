@@ -15,7 +15,8 @@
 		DATES_CHECK_TIME: new Date(0, 0, 0, 0, 5, 0, 0),
 
 		ONLINE_ICON: 'favicon.png',
-		OFFLINE_ICON: 'favicon-offline.png'
+		OFFLINE_ICON: 'favicon-offline.png',
+		BADGE_COLOR: [232, 76, 61, 255]
 	};
 
 	function registerListeners(settings, backgroundWorker) {
@@ -101,6 +102,7 @@
 			this.timer = null;
 			this.reloading = false;
 			this.online = false;
+			this.badgeText = '';
 			this.timeout = null;
 			this.importantDates = null;
 			this.lastChecked = null;
@@ -276,6 +278,10 @@
 							chrome.notifications.clear(id, function() {});
 						}, 10 * 1000);
 					});
+
+					self._setBadge('!');
+				} else {
+					self._setBadge('');
 				}
 
 				return results;
@@ -310,6 +316,15 @@
 				if (self.online != online)
 					chrome.browserAction.setIcon({ path: (online ? self.settings.ONLINE_ICON : self.settings.OFFLINE_ICON) });
 				self.online = online;
+			},
+
+			_setBadge: function(badgeText) {
+				var self = this;
+				if (self.badgeText !== badgeText) {
+					chrome.browserAction.setBadgeBackgroundColor({ color: self.settings.BADGE_COLOR });
+					chrome.browserAction.setBadgeText({ text: badgeText });
+				}
+				self.badgeText = badgeText;
 			}
 		};
 
