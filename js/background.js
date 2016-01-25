@@ -54,7 +54,7 @@
 		});
 
 		chrome.notifications.onClicked.addListener(function(id) {
-			chrome.tabs.create({ url: settings.REGISTER_URL + '?term_in=' + id });
+			if (id !== 'important-dates') chrome.tabs.create({ url: settings.REGISTER_URL + '?term_in=' + id });
 			chrome.notifications.clear(id, function() {});
 		});
 	}
@@ -213,10 +213,7 @@
 
 				$(results.courses).each(function() {
 					if (this.CRN in results.watched && this.Seats > 0)
-						self.additions[this.CRN] = {
-							title: this.CRN,
-							message: this.Title
-						};
+						self.additions[this.CRN] = { title: this.CRN, message: this.Title };
 				});
 
 				if (!$.isEmptyObject(self.additions)) {
@@ -263,7 +260,7 @@
 					for (var term in results[prop]) {
 						var overlap = self._checkOverlap(requestType, results[prop][term], currentDate);
 						results[prop][term].available = overlap.available;
-						if (overlap.message) items.push(message);
+						if (overlap.message) items.push({ title: overlap.message, message: '' });
 					}
 				}
 
