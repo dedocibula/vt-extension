@@ -192,6 +192,9 @@
 			updateWatchedCourses: function(termyear, courses) {
 				var self = this;
 				self.watchedCourses[termyear] = courses || {};
+				for (var crn in self.additions)
+					if (!(crn in courses))
+						delete self.additions[crn];
 				self.storage.persist('watchedCourses', self.watchedCourses);
 			},
 
@@ -217,6 +220,7 @@
 					!results.importantDates.courseAdds[results.default].available) return;
 				var self = this, $results = $(results.courses);
 
+				self.additions = {};
 				$(results.courses).each(function() {
 					if (this.CRN in results.watched && this.Seats > 0)
 						self.additions[this.CRN] = { title: this.CRN, message: this.Title };

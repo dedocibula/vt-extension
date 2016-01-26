@@ -4,10 +4,14 @@
 	chrome.runtime.sendMessage({ action: 'getCourseChanges', arguments: [] }, function(response) {
 		if ($.isEmptyObject(response)) return;
 
+		var registered = {};
+		$('.datadisplaytable tr input[name="CRN_IN"]').each(function() { registered[this.value] = 'R'; });
+
 		// additions
 		var $courseFields = $('input[id^="crn_id"]'), length = Math.min($courseFields.length, response.additions.length);
-		for (var i = 0; i < length; i++)
-			$courseFields[i].value = response.additions[i];
+		for (var i = 0, j = 0; i < length; i++)
+			if (!(response.additions[i] in registered))
+				$courseFields[j++].value = response.additions[i];
 
 		// removals
 		for (var i = 0; i < response.removals.length; i++)
