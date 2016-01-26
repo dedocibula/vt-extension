@@ -10,7 +10,8 @@
 		MAIN_URL: chrome.extension.getURL('index.html'),
 		LOGIN_URL: baseUrl + 'twbkwbis.P_GenMenu?name=bmenu.P_MainMnu',
 		REGISTER_URL: baseUrl + 'bwskfreg.P_AddDropCrse',
-		DATES_URL: 'https://www.registrar.vt.edu/dates_deadlines/course_request_dates/index.html',
+		COURSE_REQUEST_URL: 'http://www.registrar.vt.edu/dates_deadlines/course_request_dates/index.html',
+		DROP_ADD_URL: 'http://www.registrar.vt.edu/dates_deadlines/drop_add/index.html',
 		REFRESH_INTERVAL: 20 * 1000,
 		DATES_CHECK_TIME: new Date(0, 0, 0, 0, 5, 0, 0),
 
@@ -248,11 +249,11 @@
 				} else {
 					if (self.timeout) clearTimeout(self.timeout);
 
-					self.loader
-						.getImportantDatesAsync(terms)
-						.done(function(results) {
+					$.when(self.loader.getCourseRequestDatesAsync(terms),
+						self.loader.getDropAddDatesAsync(terms))
+						.done(function(courseRequests, dropAddRequests) {
 							self.lastChecked = currentDate;
-							self.importantDates = self._checkAvailability(results, currentDate);
+							self.importantDates = self._checkAvailability($.extend({ courseRequests: courseRequests }, dropAddRequests), currentDate);
 							self.timeout = setTimeout(function() { self.reloadAll(function() { }); }, self._nextOccurrence());
 							callback(self.importantDates);
 						});
@@ -391,16 +392,41 @@
 				return deferred.promise();
 			},
 
-			getImportantDatesAsync: function(terms) {
+			getCourseRequestDatesAsync: function(terms) {
 				var self = this;
 
 				var deferred = $.Deferred();
 				$.ajax({
-					url: self.settings.DATES_URL,
+					url: self.settings.COURSE_REQUEST_URL,
 					method: 'GET',
 					type: 'html'
 				}).done(function(results) {
-					deferred.resolve(self._processImportantDates(results.replace(/<img\b[^>]*>/ig, ''), terms));
+					deferred.resolve(self._processCourseRequests(results.replace(/<img\b[^>]*>/ig, ''), terms));
+				}).fail(function(ignore, status) {
+					deferred.reject(status);
+				});
+				return deferred.promise();
+			},
+
+			getDropAddDatesAsync: function(terms) {
+				var self = this;
+
+				var deferred = $.Deferred();
+				$.ajax({
+					url: self.settings.DROP_ADD_URL,
+					method: 'GET',
+					type: 'html'
+				}).done(function(results) {
+					var results = results.replace(/<img\b[^>]*>/ig, '');
+
+					var patterns = {};
+					for (var term in terms) {
+						var parts = terms[term].split(' ');
+						patterns[term] = { term: parts[0], year: parts[parts.length - 1] };
+					}
+
+					var dropAddRequests = self._processDropAddBeginnings(results, patterns);
+					deferred.resolve(self._processDropAddEndings(dropAddRequests, results, patterns));
 				}).fail(function(ignore, status) {
 					deferred.reject(status);
 				});
@@ -435,20 +461,68 @@
 				return timetable;
 			},
 
-			_processImportantDates: function(results, terms) {
-				var self = this, $results = $(results), importantDates = {}, terms = $.extend(true, {}, terms);
+			_processCourseRequests: function(results, terms) {
+				var self = this, $results = $(results), courseRequests = {},
+					$items = $results.find('h3:contains("Course Request")').next('ul').children();
 
 				for (var term in terms) {
-					var parts = terms[term].split(' ');
-					terms[term] = { term: parts[0], year: parts[parts.length - 1] };
+					var termParts = terms[term].split(' ');
+					for (var i = 0; i < $items.length; i++) {
+						var parts = $items[i].innerText.split(':');
+						if (parts[0].match(termParts[0] + ' ' + termParts[termParts.length - 1])) {
+							var match = parts[1].trim().match(/(.+) (\d+)-(\d+), (\d+)/);
+							if (match && match.length == 5)
+								parts[1] = match[1] + ' ' + match[2] + ', ' + match[4] + ' - ' + match[1] + ' ' + match[3] + ', ' + match[4];
+
+							var limits = parts[1].split(' - ');
+							courseRequests[term] = {
+								start: Date.parse(limits[0].trim()),
+								end: Date.parse(limits[1].trim())
+							}
+							break;
+						}
+					}
 				}
 
-				importantDates.courseRequests = self._processCourseRequests($results, terms);
+				return courseRequests;
+			},
 
-				importantDates.courseAdds = self._processDropAddBeginnings($results, terms);
-				importantDates.courseDrops = $.extend(true, {}, importantDates.courseAdds);
+			_processDropAddBeginnings: function(results, patterns) {
+				var $items = $(results).find('h3:contains("Web Drop/Add Availability Dates")').next('ul').children(),
+					dropAddRequests = { courseAdds: {}, courseDrops: {} };
 
-				return self._processDropAddEndings(importantDates, $results, terms);
+				for (var term in patterns) {
+					for (var i = 0; i < $items.length; i++) {
+						var parts = $items[i].innerText.split(' opens ');
+						if (parts[0].match(patterns[term].term + ' ' + patterns[term].year)) {
+							dropAddRequests.courseAdds[term] = { start: Date.parse(parts[1].trim()) };
+							dropAddRequests.courseDrops[term] = { start: Date.parse(parts[1].trim()) };
+							break;
+						}
+					}
+				}
+
+				return dropAddRequests;
+			},
+
+			_processDropAddEndings: function(dropAddRequests, results, patterns) {
+				var $rows = $(results).find('h3:contains("Drop/Add Deadlines")').next('table').find('tr:gt(1)'), 
+					keys = Object.keys(patterns).sort();
+
+				$rows.each(function() {
+					var $cols = $(this).children();
+					for (var j = 0; j < keys.length; j++) {
+						var term = patterns[keys[j]];
+						if (term && $cols[0].innerText.match(new RegExp('.*' + term.term + '.+' + term.year))) {
+							dropAddRequests.courseAdds[keys[j]].end = Date.parse($cols[1].innerText.trim());
+							dropAddRequests.courseDrops[keys[j]].end = Date.parse($cols[2].innerText.trim());
+							delete patterns[keys[j]];
+							break;
+						}
+					}
+				});
+
+				return dropAddRequests;
 			},
 
 			_processMenuSection: function($results) {
@@ -521,68 +595,6 @@
 				}).filter(function() { return this.CRN; }).toArray();
 
 				return courses;
-			},
-
-			_processCourseRequests: function($results, terms) {
-				var $items = $results.find('h3:contains("Course Request")').next('ul').children()
-					courseRequests = {};
-
-				for (var term in terms) {
-					for (var i = 0; i < $items.length; i++) {
-						var parts = $items[i].innerText.split(':');
-						if (parts[0].match(terms[term].term + ' ' + terms[term].year)) {
-							var match = parts[1].trim().match(/(.+) (\d+)-(\d+), (\d+)/);
-							if (match && match.length == 5)
-								parts[1] = match[1] + ' ' + match[2] + ', ' + match[4] + ' - ' + match[1] + ' ' + match[3] + ', ' + match[4];
-
-							var limits = parts[1].split(' - ');
-							courseRequests[term] = {
-								start: Date.parse(limits[0].trim()),
-								end: Date.parse(limits[1].trim())
-							}
-							break;
-						}
-					}
-				}
-
-				return courseRequests;
-			},
-
-			_processDropAddBeginnings: function($results, terms) {
-				var $items = $results.find('h3:contains("Web Drop/Add Availability Dates")').next('ul').children(),
-					dropAddRequests = {};
-
-				for (var term in terms) {
-					for (var i = 0; i < $items.length; i++) {
-						var parts = $items[i].innerText.split(' opens ');
-						if (parts[0].match(terms[term].term + ' ' + terms[term].year)) {
-							dropAddRequests[term] = { start: Date.parse(parts[1].trim()) };
-							break;
-						}
-					}
-				}
-
-				return dropAddRequests;
-			},
-
-			_processDropAddEndings: function(importantDates, $results, terms) {
-				var $rows = $results.find('h3:contains("Drop/Add Deadlines")').next('table').find('tr:gt(1)'), 
-					keys = Object.keys(terms).sort(), terms = $.extend(true, {}, terms);
-
-				$rows.each(function() {
-					var $cols = $(this).children();
-					for (var j = 0; j < keys.length; j++) {
-						var term = terms[keys[j]];
-						if (term && $cols[0].innerText.match(new RegExp('.*' + term.term + '.+' + term.year))) {
-							importantDates.courseAdds[keys[j]].end = Date.parse($cols[1].innerText.trim());
-							importantDates.courseDrops[keys[j]].end = Date.parse($cols[2].innerText.trim());
-							delete terms[keys[j]];
-							break;
-						}
-					}
-				});
-
-				return importantDates;
 			}
 		};
 
