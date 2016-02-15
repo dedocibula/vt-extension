@@ -456,7 +456,7 @@
 					'registered': {}
 				}
 
-				if (results.match(new RegExp(term.substring(0, 4)))) timetable['default'] = term;
+				if (term && results.match(new RegExp(term.substring(0, 4)))) timetable['default'] = term;
 
 				$results.find('table.datadisplaytable tr:gt(1) td:first-child > a').each(function() { 
 					timetable['registered'][this.text.trim()] = 'R';
