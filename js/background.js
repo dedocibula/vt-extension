@@ -499,8 +499,13 @@
 					for (var i = 0; i < $items.length; i++) {
 						var parts = $items[i].innerText.split(' opens ');
 						if (parts[0].match(patterns[term].term + ' ' + patterns[term].year)) {
-							dropAddRequests.courseAdds[term] = { start: Date.parse(parts[1].trim()) };
-							dropAddRequests.courseDrops[term] = { start: Date.parse(parts[1].trim()) };
+							try {
+								dropAddRequests.courseAdds[term] = { start: Date.parse(parts[1].trim()) };
+								dropAddRequests.courseDrops[term] = { start: Date.parse(parts[1].trim()) };
+							} catch (e) {
+								console.log('Failed to process drop/adds beginnings for date: ' + parts[0]);
+								console.log(e);
+							}
 							break;
 						}
 					}
@@ -518,9 +523,14 @@
 					for (var j = 0; j < keys.length; j++) {
 						var term = patterns[keys[j]];
 						if (term && $cols[0].innerText.match(new RegExp('.*' + term.term + '.+' + term.year))) {
-							dropAddRequests.courseAdds[keys[j]].end = Date.parse($cols[1].innerText.trim());
-							dropAddRequests.courseDrops[keys[j]].end = Date.parse($cols[2].innerText.trim());
-							delete patterns[keys[j]];
+							try {
+								dropAddRequests.courseAdds[keys[j]].end = Date.parse($cols[1].innerText.trim());
+								dropAddRequests.courseDrops[keys[j]].end = Date.parse($cols[2].innerText.trim());
+								delete patterns[keys[j]];
+							} catch (e) {
+								console.log('Failed to process drop/adds endings for date: ' + $cols[0].innerText);
+								console.log(e);
+							}
 							break;
 						}
 					}
