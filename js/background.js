@@ -429,8 +429,7 @@
 						patterns[term] = { term: parts[0], year: parts[parts.length - 1] };
 					}
 
-					var dropAddRequests = self._processDropAddBeginnings(results, patterns);
-					deferred.resolve(self._processDropAddEndings(dropAddRequests, results, patterns));
+					deferred.resolve(self._processDropAdds(results, patterns));
 				}).fail(function(ignore, status) {
 					deferred.reject(status);
 				});
@@ -466,8 +465,8 @@
 			},
 
 			_processCourseRequests: function(results, terms) {
-				var self = this, $results = $(results), courseRequests = {},
-					$items = $results.find('h3:contains("Course Request")').next('ul').children();
+				var self = this, courseRequests = {},
+					$items = $(results).find('h3:contains("Course Request")').next('ul').children();
 
 				for (var term in terms) {
 					var termParts = terms[term].split(' ');
@@ -491,44 +490,22 @@
 				return courseRequests;
 			},
 
-			_processDropAddBeginnings: function(results, patterns) {
-				var $items = $(results).find('h3:contains("Web Drop/Add Availability Dates")').next('ul').children(),
+			_processDropAdds: function(results, patterns) {
+				var self = this, 
+					$rows = $(results).find('h3:contains("Web Drop/Add Availability Dates")').next('table').find('tr:gt(0)'),
 					dropAddRequests = { courseAdds: {}, courseDrops: {} };
-
-				for (var term in patterns) {
-					for (var i = 0; i < $items.length; i++) {
-						var parts = $items[i].innerText.split(' opens ');
-						if (parts[0].match(patterns[term].term + ' ' + patterns[term].year)) {
-							try {
-								dropAddRequests.courseAdds[term] = { start: Date.parse(parts[1].trim()) };
-								dropAddRequests.courseDrops[term] = { start: Date.parse(parts[1].trim()) };
-							} catch (e) {
-								console.log('Failed to process drop/adds beginnings for date: ' + parts[0]);
-								console.log(e);
-							}
-							break;
-						}
-					}
-				}
-
-				return dropAddRequests;
-			},
-
-			_processDropAddEndings: function(dropAddRequests, results, patterns) {
-				var $rows = $(results).find('h3:contains("Drop/Add Deadlines")').next('table').find('tr:gt(1)'), 
-					keys = Object.keys(patterns).sort();
 
 				$rows.each(function() {
 					var $cols = $(this).children();
-					for (var j = 0; j < keys.length; j++) {
-						var term = patterns[keys[j]];
-						if (term && $cols[0].innerText.match(new RegExp('.*' + term.term + '.+' + term.year))) {
+					for (var key in patterns) {
+						var term = patterns[key];
+						if (term && $cols[0].innerText.match(new RegExp('.*' + term.term + '.+' + term.year + '.*'))) {
 							try {
-								dropAddRequests.courseAdds[keys[j]].end = Date.parse($cols[1].innerText.trim());
-								dropAddRequests.courseDrops[keys[j]].end = Date.parse($cols[2].innerText.trim());
-								delete patterns[keys[j]];
+								dropAddRequests.courseAdds[key] = self._extractDropAddInterval($cols[1]);
+								dropAddRequests.courseDrops[key] = self._extractDropAddInterval($cols[2]);
+								delete patterns[key];
 							} catch (e) {
-								console.log('Failed to process drop/adds endings for date: ' + $cols[0].innerText);
+								console.log('Failed to process drop/adds intervals for date: ' + $cols[0].innerText);
 								console.log(e);
 							}
 							break;
@@ -609,7 +586,14 @@
 				}).filter(function() { return this.CRN; }).toArray();
 
 				return courses;
-			}
+			},
+
+			_extractDropAddInterval: function(cell) {
+				var dateParts = cell.innerText.trim().split('-');
+				if (dateParts.length !== 2)
+					throw new Error("Invalid drop add interval");
+				return { start: Date.parse(dateParts[0].trim()), end: Date.parse(dateParts[1].trim()) };
+			},
 		};
 
 		return Loader;
