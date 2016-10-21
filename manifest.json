@@ -10,7 +10,7 @@
 	"background": {
 		"scripts": [ "js/libs/jquery.min.js", "js/background.js" ]
 	},
-	"permissions": [ "https://banweb.banner.vt.edu/*", "http://www.registrar.vt.edu/*", "notifications", "webRequest", "webRequestBlocking", "tabs" ],
+	"permissions": [ "https://banweb.banner.vt.edu/*", "http://registrar.vt.edu/*", "notifications", "webRequest", "webRequestBlocking", "tabs" ],
 	"icons": {
 		"48": "favicon.png"
 	},

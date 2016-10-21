@@ -10,8 +10,7 @@
 		MAIN_URL: chrome.extension.getURL('index.html'),
 		LOGIN_URL: baseUrl + 'twbkwbis.P_GenMenu?name=bmenu.P_MainMnu',
 		REGISTER_URL: baseUrl + 'bwskfreg.P_AddDropCrse',
-		COURSE_REQUEST_URL: 'http://www.registrar.vt.edu/dates_deadlines/course_request_dates/index.html',
-		DROP_ADD_URL: 'http://www.registrar.vt.edu/dates_deadlines/drop_add/index.html',
+		REQUEST_DATES_URL: 'http://registrar.vt.edu/dates-deadlines-accordion/Drop-Add.html',
 		REFRESH_INTERVAL: 20 * 1000,
 		DATES_CHECK_TIME: new Date(0, 0, 0, 0, 5, 0, 0),
 
@@ -253,11 +252,10 @@
 				} else {
 					if (self.timeout) clearTimeout(self.timeout);
 
-					$.when(self.loader.getCourseRequestDatesAsync(terms),
-						self.loader.getDropAddDatesAsync(terms))
-						.done(function(courseRequests, dropAddRequests) {
+					self.loader.getRequestDatesAsync(terms)
+						.done(function(requestDates) {
 							self.lastChecked = currentDate;
-							self.importantDates = self._checkAvailability($.extend({ courseRequests: courseRequests }, dropAddRequests), currentDate);
+							self.importantDates = self._checkAvailability(requestDates, currentDate);
 							self.timeout = setTimeout(function() { self.reloadAll(function() { }); }, self._nextOccurrence());
 							callback(self.importantDates);
 						});
@@ -396,32 +394,18 @@
 				return deferred.promise();
 			},
 
-			getCourseRequestDatesAsync: function(terms) {
+			getRequestDatesAsync: function(terms) {
 				var self = this;
 
 				var deferred = $.Deferred();
 				$.ajax({
-					url: self.settings.COURSE_REQUEST_URL,
-					method: 'GET',
-					type: 'html'
-				}).done(function(results) {
-					deferred.resolve(self._processCourseRequests(results.replace(/<img\b[^>]*>/ig, ''), terms));
-				}).fail(function(ignore, status) {
-					deferred.reject(status);
-				});
-				return deferred.promise();
-			},
-
-			getDropAddDatesAsync: function(terms) {
-				var self = this;
-
-				var deferred = $.Deferred();
-				$.ajax({
-					url: self.settings.DROP_ADD_URL,
+					url: self.settings.REQUEST_DATES_URL,
 					method: 'GET',
 					type: 'html'
 				}).done(function(results) {
 					var results = results.replace(/<img\b[^>]*>/ig, '');
+
+					var courseRequests = self._processCourseRequests(results, terms);
 
 					var patterns = {};
 					for (var term in terms) {
@@ -429,7 +413,9 @@
 						patterns[term] = { term: parts[0], year: parts[parts.length - 1] };
 					}
 
-					deferred.resolve(self._processDropAdds(results, patterns));
+					var dropAddRequests = self._processDropAdds(results, patterns);
+
+					deferred.resolve($.extend({ courseRequests: courseRequests }, dropAddRequests));
 				}).fail(function(ignore, status) {
 					deferred.reject(status);
 				});
@@ -466,7 +452,7 @@
 
 			_processCourseRequests: function(results, terms) {
 				var self = this, courseRequests = {},
-					$items = $(results).find('h3:contains("Course Request")').next('ul').children();
+					$items = $(results).find('h3:contains("Course Request Availability")').next('ul').children();
 
 				for (var term in terms) {
 					var termParts = terms[term].split(' ');
@@ -492,7 +478,7 @@
 
 			_processDropAdds: function(results, patterns) {
 				var self = this, 
-					$rows = $(results).find('h3:contains("Web Drop/Add Availability Dates")').next('table').find('tr:gt(0)'),
+					$rows = $(results).find('h3:contains("Web Drop/Add Availability")').next('table').find('tr:gt(0)'),
 					dropAddRequests = { courseAdds: {}, courseDrops: {} };
 
 				$rows.each(function() {
