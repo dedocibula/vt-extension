@@ -1,5 +1,6 @@
 (function($, window, document, undefined) {
 	var cachedResults = null;
+	var loginRedirect = false;
 	var baseUrl = 'https://banweb.banner.vt.edu/ssb/prod/';
 
 	var settings = {
@@ -45,6 +46,7 @@
 		chrome.browserAction.onClicked.addListener(function(tab) {
 			backgroundWorker.reloadAll(function(results) {
 				var url = results.loggedIn ? settings.MAIN_URL : settings.LOGIN_URL;
+				loginRedirect = !results.loggedIn;
 				chrome.tabs.query({ url: url }, function(tabs) {
 					if (tabs.length !== 0) {
 						chrome.tabs.update(tabs[0].id, { url: url, active: true }, function() { cachedResults = results; });
@@ -92,6 +94,17 @@
 			if (!$.isFunction(callback)) return;
 			backgroundWorker.getCourseChanges(callback);
 		};
+
+		window.shouldRedirect = function(callback) {
+			if (!$.isFunction(callback)) return;
+			if (loginRedirect) {
+				callback({ redirect: settings.MAIN_URL });
+				cachedResults = null;
+				loginRedirect = false;
+			} else {
+				callback({ redirect: null });
+			}
+		}
 	}
 
 	var BackgroundWorker = (function() {

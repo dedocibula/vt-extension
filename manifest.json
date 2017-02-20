@@ -1,6 +1,6 @@
 {
 	"name": "VT by DedoCibula",
-	"version": "2.0",
+	"version": "2.1",
 	"manifest_version": 2,
 	"description": "Do not miss your VT course registration ever again...",
 	"browser_action": {
@@ -18,7 +18,11 @@
 		{
 			"matches": [ "https://banweb.banner.vt.edu/ssb/prod/bwskfreg.P_AddDropCrse*" ],
 			"js": [ "js/libs/jquery.min.js", "js/register.js" ]
+		},
+		{
+			"matches": [ "https://banweb.banner.vt.edu/ssb/prod/twbkwbis.P_GenMenu?name=bmenu.P_MainMnu*" ],
+			"js": [ "js/libs/jquery.min.js", "js/redirect.js" ]
 		}
 	],
-	"web_accessible_resources": ["favicon.png"]
+	"web_accessible_resources": ["favicon.png", "index.html"]
 }
