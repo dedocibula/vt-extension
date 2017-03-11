@@ -268,20 +268,20 @@
 					self.loader.getRequestDatesAsync(terms)
 						.done(function(requestDates) {
 							self.lastChecked = currentDate;
-							self.importantDates = self._checkAvailability(requestDates, currentDate);
+							self.importantDates = self._checkAvailability(requestDates, currentDate, terms);
 							self.timeout = setTimeout(function() { self.reloadAll(function() { }); }, self._nextOccurrence());
 							callback(self.importantDates);
 						});
 				}
 			},
 
-			_checkAvailability: function(results, currentDate) {
+			_checkAvailability: function(results, currentDate, termLabels) {
 				var self = this, items = [];
 
 				for (var prop in results) {
 					var requestType = prop.replace(/([A-Z])/g, ' $1').toLowerCase();
 					for (var term in results[prop]) {
-						var overlap = self._checkOverlap(requestType, results[prop][term], currentDate);
+						var overlap = self._checkOverlap(requestType, termLabels[term], results[prop][term], currentDate);
 						results[prop][term].available = overlap.available;
 						if (overlap.message) items.push({ title: overlap.message, message: '' });
 					}
@@ -309,17 +309,17 @@
 				return results;
 			},
 
-			_checkOverlap: function(requestType, interval, currentDate) {
+			_checkOverlap: function(requestType, termLabel, interval, currentDate) {
 				var available = currentDate >= interval.start && currentDate <= interval.end,
 					message = null;
 
 				if (available) {
-					if (currentDate === interval.start) message = 'Today, ' + requestType + ' begin';
-					if (currentDate === interval.end) message = 'Today is the last day for ' + requestType;
+					if (currentDate === interval.start) message = 'Today, ' + requestType + ' for ' + termLabel + ' begin';
+					if (currentDate === interval.end) message = 'Today is the last day for ' + requestType + ' for ' + termLabel;
 				} else {
 					var tomorrow = new Date(currentDate);
 					tomorrow.setDate(tomorrow.getDate() + 1);
-					if (tomorrow.getTime() === interval.start) message = 'Tomorrow, ' + requestType + ' become available';
+					if (tomorrow.getTime() === interval.start) message = 'Tomorrow, ' + requestType + ' for ' + termLabel + ' become available';
 				}
 				
 				return { available: available, message: message };
